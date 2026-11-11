@@ -3,35 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pokémon 圖鑑</title>
+  <title>Pokémon 現代圖鑑系統</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #f7f9fc; color: #2d3748; padding: 20px; }
-    .container { max-width: 900px; margin: 0 auto; }
-    h1 { text-align: center; margin-bottom: 20px; color: #4a5568; }
-    .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
-    input, select { padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 15px; background: white; }
-    input { flex: 1; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-    .card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #edf2f7; text-align: center; }
-    .card img { width: 120px; height: 120px; object-fit: contain; }
-    .dex-num { font-size: 12px; color: #a0aec0; font-weight: bold; }
-    .name { font-size: 18px; font-weight: bold; margin: 6px 0; color: #2d3748; }
-    .types { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; }
-    .badge { padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-    .type-grass { background: #e6f4ea; color: #137333; }
-    .type-poison { background: #f3e8fd; color: #7627bb; }
-    .type-fire { background: #fce8e6; color: #c5221f; }
-    .type-water { background: #e8f0fe; color: #1a73e8; }
-    .type-electric { background: #fef7e0; color: #b06000; }
-    .stats { text-align: left; font-size: 13px; background: #f8fafc; padding: 8px 12px; border-radius: 8px; }
-    .stat-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    body { background-color: #f8fafc; color: #1e293b; padding: 24px; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 24px; }
+    h1 { font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+    p.subtitle { font-size: 14px; color: #64748b; }
+    
+    .filter-panel { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    input[type="text"] { flex: 1; min-width: 220px; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; outline: none; }
+    input[type="text"]:focus { border-color: #3b82f6; }
+    select { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; background: white; outline: none; cursor: pointer; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+    .card { background: white; border-radius: 16px; padding: 16px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); text-align: center; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.06); }
+    .card img { width: 130px; height: 130px; object-fit: contain; margin: 8px 0; }
+    .dex-num { font-size: 12px; font-weight: 700; color: #94a3b8; }
+    .name { font-size: 17px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+    .types { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
+    .badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    
+    .type-grass { background: #dcfce7; color: #15803d; }
+    .type-poison { background: #f3e8ff; color: #7e22ce; }
+    .type-fire { background: #fee2e2; color: #b91c1c; }
+    .type-water { background: #e0f2fe; color: #0369a1; }
+    .type-electric { background: #fef9c3; color: #a16207; }
+
+    /* Modal 詳細視窗 */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.4); display: none; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(4px); }
+    .modal-content { background: white; border-radius: 24px; max-width: 460px; width: 90%; padding: 24px; position: relative; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+    .close-btn { position: absolute; top: 16px; right: 16px; border: none; background: #f1f5f9; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; line-height: 32px; color: #64748b; }
+    .stat-bar-container { margin: 8px 0; font-size: 13px; }
+    .stat-label-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .bar-bg { width: 100%; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; background: #3b82f6; border-radius: 4px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>寶可夢圖鑑</h1>
-    <div class="search-box">
+    <header>
+      <h1>Pokémon 現代圖鑑</h1>
+      <p class="subtitle">模組化資料架構 · 分支功能實裝示範</p>
+    </header>
+
+    <div class="filter-panel">
       <input type="text" id="searchInput" placeholder="搜尋名稱、屬性或 #編號...">
       <select id="genSelect">
         <option value="all">所有世代</option>
@@ -39,16 +57,22 @@
         <option value="2">第二世代 (城都)</option>
       </select>
     </div>
+
     <div class="grid" id="pokemonGrid"></div>
+  </div>
+
+  <!-- 詳細彈窗 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content" id="modalContent"></div>
   </div>
 
   <script>
     const pokemons = [
-      { id: 1, name: "妙蛙種子", en: "Bulbasaur", gen: 1, types: ["草", "毒"], hp: 45, atk: 49, def: 49, strong: ["水", "地面", "岩石"], weak: ["火", "冰", "飛行", "超能力"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" },
-      { id: 4, name: "小火龍", en: "Charmander", gen: 1, types: ["火"], hp: 39, atk: 52, def: 43, strong: ["草", "冰", "蟲", "鋼"], weak: ["水", "地面", "岩石"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" },
-      { id: 7, name: "傑尼龜", en: "Squirtle", gen: 1, types: ["水"], hp: 44, atk: 48, def: 65, strong: ["火", "地面", "岩石"], weak: ["電", "草"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png" },
-      { id: 25, name: "皮卡丘", en: "Pikachu", gen: 1, types: ["電"], hp: 35, atk: 55, def: 40, strong: ["水", "飛行"], weak: ["地面"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" },
-      { id: 152, name: "菊草葉", en: "Chikorita", gen: 2, types: ["草"], hp: 45, atk: 49, def: 65, strong: ["水", "地面", "岩石"], weak: ["火", "冰", "飛行", "蟲", "毒"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/152.png" }
+      { id: 1, name: "妙蛙種子", en: "Bulbasaur", gen: 1, types: ["草", "毒"], hp: 45, atk: 49, def: 49, spAtk: 65, spDef: 65, spd: 45, strong: ["水", "地面", "岩石"], weak: ["火", "冰", "飛行", "超能力"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" },
+      { id: 4, name: "小火龍", en: "Charmander", gen: 1, types: ["火"], hp: 39, atk: 52, def: 43, spAtk: 60, spDef: 50, spd: 65, strong: ["草", "冰", "蟲", "鋼"], weak: ["水", "地面", "岩石"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" },
+      { id: 7, name: "傑尼龜", en: "Squirtle", gen: 1, types: ["水"], hp: 44, atk: 48, def: 65, spAtk: 50, spDef: 64, spd: 43, strong: ["火", "地面", "岩石"], weak: ["電", "草"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png" },
+      { id: 25, name: "皮卡丘", en: "Pikachu", gen: 1, types: ["電"], hp: 35, atk: 55, def: 40, spAtk: 50, spDef: 50, spd: 90, strong: ["水", "飛行"], weak: ["地面"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" },
+      { id: 152, name: "菊草葉", en: "Chikorita", gen: 2, types: ["草"], hp: 45, atk: 49, def: 65, spAtk: 49, spDef: 65, spd: 45, strong: ["水", "地面", "岩石"], weak: ["火", "冰", "飛行", "蟲", "毒"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/152.png" }
     ];
 
     const typeClassMap = { "草": "type-grass", "毒": "type-poison", "火": "type-fire", "水": "type-water", "電": "type-electric" };
@@ -56,21 +80,66 @@
     function render(list) {
       const grid = document.getElementById("pokemonGrid");
       grid.innerHTML = list.map(p => `
-        <div class="card">
+        <div class="card" onclick="openModal(${p.id})">
           <div class="dex-num">#${String(p.id).padStart(4, '0')} · Gen ${p.gen}</div>
           <img src="${p.img}" alt="${p.name}">
-          <div class="name">${p.name} <small style="color:#718096;font-size:13px;">${p.en}</small></div>
+          <div class="name">${p.name}</div>
           <div class="types">
             ${p.types.map(t => `<span class="badge ${typeClassMap[t] || ''}">${t}</span>`).join('')}
-          </div>
-          <div class="stats">
-            <div class="stat-row"><span>HP 生命值</span><strong>${p.hp}</strong></div>
-            <div class="stat-row"><span>優勢剋制</span><span style="color:#137333;">${p.strong.join(', ')}</span></div>
-            <div class="stat-row"><span>劣勢被剋</span><span style="color:#c5221f;">${p.weak.join(', ')}</span></div>
           </div>
         </div>
       `).join('');
     }
+
+    function openModal(id) {
+      const p = pokemons.find(item => item.id === id);
+      if (!p) return;
+      const bst = p.hp + p.atk + p.def + p.spAtk + p.spDef + p.spd;
+      const modal = document.getElementById("modalContent");
+      modal.innerHTML = `
+        <button class="close-btn" onclick="closeModal()">✕</button>
+        <div style="text-align: center;">
+          <div class="dex-num">#${String(p.id).padStart(4, '0')}</div>
+          <h2 style="font-size:22px;margin:4px 0;">${p.name} <span style="font-size:14px;color:#94a3b8;font-weight:normal;">${p.en}</span></h2>
+          <div class="types" style="margin-bottom:12px;">
+            ${p.types.map(t => `<span class="badge ${typeClassMap[t] || ''}">${t}</span>`).join('')}
+          </div>
+          <img src="${p.img}" style="width:140px;height:140px;object-fit:contain;" />
+        </div>
+        
+        <div style="margin-top:16px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:6px;">能力值數據 (總合 BST: ${bst})</div>
+          ${createStatRow("HP 生命值", p.hp)}
+          ${createStatRow("攻擊力", p.atk)}
+          ${createStatRow("防禦力", p.def)}
+          ${createStatRow("速度", p.spd)}
+        </div>
+
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;font-size:12px;">
+          <div><strong style="color:#15803d;">剋制優勢:</strong> ${p.strong.join(' ')}</div>
+          <div><strong style="color:#b91c1c;">被剋弱點:</strong> ${p.weak.join(' ')}</div>
+        </div>
+      `;
+      document.getElementById("modalOverlay").style.display = "flex";
+    }
+
+    function createStatRow(label, val) {
+      const percent = Math.min(100, Math.round((val / 150) * 100));
+      return `
+        <div class="stat-bar-container">
+          <div class="stat-label-row"><span>${label}</span><strong>${val}</strong></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${percent}%;"></div></div>
+        </div>
+      `;
+    }
+
+    function closeModal() {
+      document.getElementById("modalOverlay").style.display = "none";
+    }
+
+    document.getElementById("modalOverlay").addEventListener("click", (e) => {
+      if (e.target.id === "modalOverlay") closeModal();
+    });
 
     function filterData() {
       const q = document.getElementById("searchInput").value.trim().toLowerCase();
