@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokémon 圖鑑</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f7f9fc; color: #2d3748; padding: 20px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 20px; color: #4a5568; }
+    .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+    input, select { padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 15px; background: white; }
+    input { flex: 1; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+    .card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #edf2f7; text-align: center; }
+    .card img { width: 120px; height: 120px; object-fit: contain; }
+    .dex-num { font-size: 12px; color: #a0aec0; font-weight: bold; }
+    .name { font-size: 18px; font-weight: bold; margin: 6px 0; color: #2d3748; }
+    .types { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; }
+    .badge { padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .type-grass { background: #e6f4ea; color: #137333; }
+    .type-poison { background: #f3e8fd; color: #7627bb; }
+    .type-fire { background: #fce8e6; color: #c5221f; }
+    .type-water { background: #e8f0fe; color: #1a73e8; }
+    .type-electric { background: #fef7e0; color: #b06000; }
+    .stats { text-align: left; font-size: 13px; background: #f8fafc; padding: 8px 12px; border-radius: 8px; }
+    .stat-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>寶可夢圖鑑</h1>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="搜尋名稱、屬性或 #編號...">
+      <select id="genSelect">
+        <option value="all">所有世代</option>
+        <option value="1">第一世代 (關都)</option>
+        <option value="2">第二世代 (城都)</option>
+      </select>
+    </div>
+    <div class="grid" id="pokemonGrid"></div>
+  </div>
+
+  <script>
+    const pokemons = [
+      { id: 1, name: "妙蛙種子", en: "Bulbasaur", gen: 1, types: ["草", "毒"], hp: 45, atk: 49, def: 49, strong: ["水", "地面", "岩石"], weak: ["火", "冰", "飛行", "超能力"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" },
+      { id: 4, name: "小火龍", en: "Charmander", gen: 1, types: ["火"], hp: 39, atk: 52, def: 43, strong: ["草", "冰", "蟲", "鋼"], weak: ["水", "地面", "岩石"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" },
+      { id: 7, name: "傑尼龜", en: "Squirtle", gen: 1, types: ["水"], hp: 44, atk: 48, def: 65, strong: ["火", "地面", "岩石"], weak: ["電", "草"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png" },
+      { id: 25, name: "皮卡丘", en: "Pikachu", gen: 1, types: ["電"], hp: 35, atk: 55, def: 40, strong: ["水", "飛行"], weak: ["地面"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" },
+      { id: 152, name: "菊草葉", en: "Chikorita", gen: 2, types: ["草"], hp: 45, atk: 49, def: 65, strong: ["水", "地面", "岩石"], weak: ["火", "冰", "飛行", "蟲", "毒"], img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/152.png" }
+    ];
+
+    const typeClassMap = { "草": "type-grass", "毒": "type-poison", "火": "type-fire", "水": "type-water", "電": "type-electric" };
+
+    function render(list) {
+      const grid = document.getElementById("pokemonGrid");
+      grid.innerHTML = list.map(p => `
+        <div class="card">
+          <div class="dex-num">#${String(p.id).padStart(4, '0')} · Gen ${p.gen}</div>
+          <img src="${p.img}" alt="${p.name}">
+          <div class="name">${p.name} <small style="color:#718096;font-size:13px;">${p.en}</small></div>
+          <div class="types">
+            ${p.types.map(t => `<span class="badge ${typeClassMap[t] || ''}">${t}</span>`).join('')}
+          </div>
+          <div class="stats">
+            <div class="stat-row"><span>HP 生命值</span><strong>${p.hp}</strong></div>
+            <div class="stat-row"><span>優勢剋制</span><span style="color:#137333;">${p.strong.join(', ')}</span></div>
+            <div class="stat-row"><span>劣勢被剋</span><span style="color:#c5221f;">${p.weak.join(', ')}</span></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterData() {
+      const q = document.getElementById("searchInput").value.trim().toLowerCase();
+      const gen = document.getElementById("genSelect").value;
+      const res = pokemons.filter(p => {
+        const matchGen = gen === "all" || p.gen === Number(gen);
+        const matchText = p.name.includes(q) || p.en.toLowerCase().includes(q) || p.types.some(t => t.includes(q)) || String(p.id).includes(q);
+        return matchGen && matchText;
+      });
+      render(res);
+    }
+
+    document.getElementById("searchInput").addEventListener("input", filterData);
+    document.getElementById("genSelect").addEventListener("change", filterData);
+    render(pokemons);
+  </script>
+</body>
+</html>
