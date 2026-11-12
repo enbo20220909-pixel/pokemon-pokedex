@@ -12,18 +12,15 @@
     h1 { font-size: 28px; font-weight: 800; color: #38bdf8; margin-bottom: 6px; }
     p.subtitle { font-size: 14px; color: #94a3b8; }
 
-    /* 世代選單 */
     .gen-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 20px; }
     .gen-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px 16px; border-radius: 20px; font-weight: 700; cursor: pointer; font-size: 13px; transition: all 0.2s ease; }
     .gen-btn:hover { border-color: #38bdf8; color: #f8fafc; }
     .gen-btn.active { background: #0284c7; color: #ffffff; border-color: #38bdf8; }
 
-    /* 搜尋列 */
     .search-box { display: flex; justify-content: center; margin-bottom: 24px; }
     .search-input { width: 100%; max-width: 480px; padding: 12px 18px; border-radius: 12px; background: #1e293b; border: 1px solid #334155; color: #f8fafc; font-size: 14px; outline: none; }
     .search-input:focus { border-color: #38bdf8; }
 
-    /* 圖鑑卡片網格 */
     .pokemon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
     .poke-card { background: #131b2e; border-radius: 16px; padding: 16px; border: 1px solid #233252; text-align: center; transition: transform 0.15s ease, border-color 0.15s ease; cursor: pointer; }
     .poke-card:hover { transform: translateY(-3px); border-color: #38bdf8; }
@@ -36,7 +33,6 @@
     .type-tags { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
     .type-tag { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #ffffff; }
 
-    /* 屬性顏色定義 */
     .type-normal { background-color: #9fa19f; }
     .type-fire { background-color: #e62829; }
     .type-water { background-color: #2980ef; }
@@ -155,7 +151,6 @@
       }
 
       grid.innerHTML = list.map(p => `
-        <div class="poke-card"><script src="js/modal.js"></script>
         <div class="poke-card" onclick="ModalModule.open(${p.id})">
           <div class="poke-id">#${String(p.id).padStart(4, "0")}</div>
           <div class="poke-img-wrap">
