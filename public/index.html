@@ -1,4 +1,3 @@
-mkdir -p ~/Desktop/pokedex && cd ~/Desktop/pokedex && cat << 'EOF' > index.html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -61,7 +60,6 @@ mkdir -p ~/Desktop/pokedex && cd ~/Desktop/pokedex && cat << 'EOF' > index.html
   </style>
   <link rel="stylesheet" href="css/modal.css">
 </head>
-<script src="js/modal.js"></script>
 <body>
   <div class="container">
     <header>
@@ -157,7 +155,8 @@ mkdir -p ~/Desktop/pokedex && cd ~/Desktop/pokedex && cat << 'EOF' > index.html
       }
 
       grid.innerHTML = list.map(p => `
-        <div class="poke-card">
+        <div class="poke-card"><script src="js/modal.js"></script>
+        <div class="poke-card" onclick="ModalModule.open(${p.id})">
           <div class="poke-id">#${String(p.id).padStart(4, "0")}</div>
           <div class="poke-img-wrap">
             <img class="poke-img" src="${p.img}" alt="${p.name}" loading="lazy">
@@ -191,6 +190,6 @@ mkdir -p ~/Desktop/pokedex && cd ~/Desktop/pokedex && cat << 'EOF' > index.html
     initGenNav();
     loadGeneration(1);
   </script>
+  <script src="js/modal.js"></script>
 </body>
 </html>
-EOF
