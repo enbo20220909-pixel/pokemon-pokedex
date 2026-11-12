@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>寶可夢全世代全國圖鑑 (Gen 1 - Gen 9)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #0b0f19; color: #f8fafc; padding: 24px 16px; min-height: 100vh; }
+    .container { max-width: 1240px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 24px; }
+    h1 { font-size: 28px; font-weight: 800; color: #38bdf8; margin-bottom: 6px; }
+    p.subtitle { font-size: 14px; color: #94a3b8; }
+
+    /* 世代選單 */
+    .gen-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 20px; }
+    .gen-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px 16px; border-radius: 20px; font-weight: 700; cursor: pointer; font-size: 13px; transition: all 0.2s ease; }
+    .gen-btn:hover { border-color: #38bdf8; color: #f8fafc; }
+    .gen-btn.active { background: #0284c7; color: #ffffff; border-color: #38bdf8; }
+
+    /* 搜尋列 */
+    .search-box { display: flex; justify-content: center; margin-bottom: 24px; }
+    .search-input { width: 100%; max-width: 480px; padding: 12px 18px; border-radius: 12px; background: #1e293b; border: 1px solid #334155; color: #f8fafc; font-size: 14px; outline: none; }
+    .search-input:focus { border-color: #38bdf8; }
+
+    /* 圖鑑卡片網格 */
+    .pokemon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .poke-card { background: #131b2e; border-radius: 16px; padding: 16px; border: 1px solid #233252; text-align: center; transition: transform 0.15s ease, border-color 0.15s ease; cursor: pointer; }
+    .poke-card:hover { transform: translateY(-3px); border-color: #38bdf8; }
+
+    .poke-id { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 4px; }
+    .poke-img-wrap { width: 120px; height: 120px; margin: 0 auto 12px; background: #0b0f19; border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; }
+    .poke-img { width: 100%; height: 100%; object-fit: contain; }
+    .poke-name { font-size: 16px; font-weight: 800; color: #f8fafc; margin-bottom: 8px; }
+    
+    .type-tags { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+    .type-tag { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #ffffff; }
+
+    /* 屬性顏色定義 */
+    .type-normal { background-color: #9fa19f; }
+    .type-fire { background-color: #e62829; }
+    .type-water { background-color: #2980ef; }
+    .type-grass { background-color: #3fa129; }
+    .type-electric { background-color: #fac000; color: #000; }
+    .type-ice { background-color: #3dcef3; color: #000; }
+    .type-fighting { background-color: #ff8000; }
+    .type-poison { background-color: #9141cb; }
+    .type-ground { background-color: #915121; }
+    .type-flying { background-color: #81b9ef; }
+    .type-psychic { background-color: #ef4179; }
+    .type-bug { background-color: #91a119; }
+    .type-rock { background-color: #afa981; }
+    .type-ghost { background-color: #704170; }
+    .type-dragon { background-color: #5060e1; }
+    .type-steel { background-color: #60a1b8; }
+    .type-dark { background-color: #50413f; }
+    .type-fairy { background-color: #ef70ef; }
+
+    .loading-text { text-align: center; color: #94a3b8; grid-column: 1 / -1; padding: 40px; font-size: 15px; }
+  </style>
+  <link rel="stylesheet" href="css/modal.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>寶可夢全國圖鑑</h1>
+      <p class="subtitle">涵蓋第 1 至第 9 世代完整全國圖鑑資料庫</p>
+    </header>
+
+    <div class="gen-nav" id="genNav"></div>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" class="search-input" placeholder="輸入寶可夢名稱或全國圖鑑編號搜尋...">
+    </div>
+
+    <div class="pokemon-grid" id="pokemonGrid">
+      <div class="loading-text">載入圖鑑中...</div>
+    </div>
+  </div>
+
+  <script>
+    const GENERATIONS = [
+      { gen: 1, name: "第一世代 (關都)", start: 1, end: 151 },
+      { gen: 2, name: "第二世代 (城都)", start: 152, end: 251 },
+      { gen: 3, name: "第三世代 (豐緣)", start: 252, end: 386 },
+      { gen: 4, name: "第四世代 (神奧)", start: 387, end: 493 },
+      { gen: 5, name: "第五世代 (合眾)", start: 494, end: 649 },
+      { gen: 6, name: "第六世代 (卡洛斯)", start: 650, end: 721 },
+      { gen: 7, name: "第七世代 (阿羅拉)", start: 722, end: 809 },
+      { gen: 8, name: "第八世代 (伽勒爾)", start: 810, end: 905 },
+      { gen: 9, name: "第九世代 (帕底亞)", start: 906, end: 1025 }
+    ];
+
+    const TYPE_ZH = {
+      normal: "一般", fire: "火", water: "水", grass: "草", electric: "電",
+      ice: "冰", fighting: "格鬥", poison: "毒", ground: "地面", flying: "飛行",
+      psychic: "超能力", bug: "蟲", rock: "岩石", ghost: "幽靈", dragon: "龍",
+      steel: "鋼", dark: "惡", fairy: "妖精"
+    };
+
+    let currentGen = GENERATIONS[0];
+    let pokemonList = [];
+
+    function initGenNav() {
+      const nav = document.getElementById("genNav");
+      nav.innerHTML = GENERATIONS.map((g, idx) => `
+        <button class="gen-btn ${idx === 0 ? 'active' : ''}" onclick="selectGen(${g.gen})">
+          ${g.name}
+        </button>
+      `).join("");
+    }
+
+    async function loadGeneration(genNum) {
+      currentGen = GENERATIONS.find(g => g.gen === genNum);
+      const grid = document.getElementById("pokemonGrid");
+      grid.innerHTML = `<div class="loading-text">正在載入 ${currentGen.name} 資料...</div>`;
+
+      document.querySelectorAll(".gen-btn").forEach((btn, idx) => {
+        btn.classList.toggle("active", GENERATIONS[idx].gen === genNum);
+      });
+
+      pokemonList = [];
+      const promises = [];
+
+      for (let i = currentGen.start; i <= currentGen.end; i++) {
+        promises.push(
+          Promise.all([
+            fetch(`https://pokeapi.co/api/v2/pokemon/${i}`).then(res => res.json()),
+            fetch(`https://pokeapi.co/api/v2/pokemon-species/${i}`).then(res => res.json())
+          ]).then(([pokemon, species]) => {
+            const zhEntry = species.names.find(n => n.language.name === "zh-Hant" || n.language.name === "zh-Hans");
+            const zhName = zhEntry ? zhEntry.name : pokemon.name;
+
+            return {
+              id: pokemon.id,
+              name: zhName,
+              nameEn: pokemon.name,
+              img: pokemon.sprites.other["official-artwork"].front_default || pokemon.sprites.front_default,
+              types: pokemon.types.map(t => t.type.name)
+            };
+          }).catch(() => null)
+        );
+      }
+
+      const results = await Promise.all(promises);
+      pokemonList = results.filter(Boolean);
+      renderGrid(pokemonList);
+    }
+
+    function renderGrid(list) {
+      const grid = document.getElementById("pokemonGrid");
+      if (list.length === 0) {
+        grid.innerHTML = `<div class="loading-text">找不到相符的寶可夢</div>`;
+        return;
+      }
+
+      grid.innerHTML = list.map(p => `
+        <div class="poke-card"><script src="js/modal.js"></script>
+        <div class="poke-card" onclick="ModalModule.open(${p.id})">
+          <div class="poke-id">#${String(p.id).padStart(4, "0")}</div>
+          <div class="poke-img-wrap">
+            <img class="poke-img" src="${p.img}" alt="${p.name}" loading="lazy">
+          </div>
+          <div class="poke-name">${p.name}</div>
+          <div class="type-tags">
+            ${p.types.map(t => `<span class="type-tag type-${t}">${TYPE_ZH[t] || t}</span>`).join("")}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      const val = e.target.value.trim().toLowerCase();
+      if (!val) {
+        renderGrid(pokemonList);
+        return;
+      }
+      const filtered = pokemonList.filter(p => 
+        p.name.toLowerCase().includes(val) || 
+        p.nameEn.toLowerCase().includes(val) || 
+        String(p.id).includes(val)
+      );
+      renderGrid(filtered);
+    });
+
+    function selectGen(genNum) {
+      loadGeneration(genNum);
+    }
+
+    initGenNav();
+    loadGeneration(1);
+  </script>
+  <script src="js/modal.js"></script>
+</body>
+</html>
