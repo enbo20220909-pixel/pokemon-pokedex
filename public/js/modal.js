@@ -1,16 +1,22 @@
-// 詳細彈窗模組（Modal Component）
 const ModalModule = (() => {
   const statNames = {
-    hp: 'HP',
-    attack: '攻擊',
-    defense: '防禦',
-    'special-attack': '特攻',
-    'special-defense': '特防',
-    speed: '速度'
+    hp: 'HP 生命',
+    attack: '物理攻擊',
+    defense: '物理防禦',
+    'special-attack': '特殊攻擊',
+    'special-defense': '特殊防禦',
+    speed: '出手速度'
   };
 
+  function getZhName(namesList, fallback) {
+    if (!namesList) return fallback;
+    const hant = namesList.find(n => ['zh-hant', 'zh-tw'].includes(n.language.name.toLowerCase()));
+    if (hant) return hant.name;
+    const hans = namesList.find(n => ['zh-hans', 'zh-cn', 'zh'].includes(n.language.name.toLowerCase()));
+    return hans ? hans.name : fallback;
+  }
+
   function init() {
-    // 動態注入彈窗 HTML 容器，避免污染 index.html 骨架
     if (!document.getElementById('pokeModal')) {
       const modalEl = document.createElement('div');
       modalEl.id = 'pokeModal';
@@ -26,47 +32,71 @@ const ModalModule = (() => {
     }
   }
 
+  function getStatColor(val) {
+    if (val >= 120) return '#38bdf8';
+    if (val >= 90) return '#4ade80';
+    if (val >= 60) return '#facc15';
+    return '#f87171';
+  }
+
   async function open(pokemonId) {
     init();
     const modal = document.getElementById('pokeModal');
     const modalBody = document.getElementById('modalBody');
     modal.style.display = 'flex';
-    modalBody.innerHTML = '<p style="text-align: center; padding: 20px;">載入數據中...</p>';
+    modalBody.innerHTML = '<p style="text-align: center; padding: 30px; color: #94a3b8;">正在讀取中文圖鑑資料...</p>';
 
     try {
-      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`);
+      const [res, speciesRes] = await Promise.all([
+        fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`),
+        fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`)
+      ]);
       if (!res.ok) throw new Error('API 讀取失敗');
       const data = await res.json();
+      const species = speciesRes.ok ? await speciesRes.json() : null;
 
+      const pureName = getZhName(species?.names, data.name.toUpperCase());
+      const spriteUrl = data.sprites.other['official-artwork'].front_default || data.sprites.front_default;
+      const types = data.types.map(t => t.type.name);
+
+      let totalStats = 0;
       const statsHtml = data.stats.map(s => {
-        const name = statNames[s.stat.name] || s.stat.name;
-        const pct = Math.min(100, Math.round((s.base_stat / 255) * 100));
+        totalStats += s.base_stat;
+        const label = statNames[s.stat.name] || s.stat.name;
+        const pct = Math.min(100, Math.round((s.base_stat / 200) * 100));
+        const barColor = getStatColor(s.base_stat);
         return `
-          <div class="stat-row">
-            <span class="stat-name">${name}</span>
-            <div class="stat-bar-bg">
-              <div class="stat-bar-fill" style="width: ${pct}%;"></div>
+          <div style="display: flex; align-items: center; margin: 10px 0; gap: 10px;">
+            <span style="width: 72px; font-size: 13px; font-weight: 700; color: #cbd5e1; text-align: left; flex-shrink: 0;">${label}</span>
+            <span style="width: 34px; font-size: 13px; font-weight: 800; color: #f8fafc; text-align: right; flex-shrink: 0;">${s.base_stat}</span>
+            <div style="flex-grow: 1; background: #0b0f19; height: 10px; border-radius: 6px; overflow: hidden;">
+              <div style="height: 100%; width: ${pct}%; background: ${barColor}; border-radius: 6px; transition: width 0.4s ease;"></div>
             </div>
-            <span class="stat-val">${s.base_stat}</span>
           </div>
         `;
       }).join('');
 
       const abilities = data.abilities.map(a => a.ability.name).join(', ');
+      const payload = JSON.stringify({ id: data.id, name: pureName, sprite_url: spriteUrl, types }).replace(/"/g, '&quot;');
 
       modalBody.innerHTML = `
         <div style="text-align: center;">
-          <img src="${data.sprites.other['official-artwork'].front_default || data.sprites.front_default}" style="width: 160px; height: 160px;" />
-          <h2>#${String(data.id).padStart(3, '0')} ${data.name.toUpperCase()}</h2>
-          <p style="color: #666; font-size: 14px;">身高: ${data.height / 10} m | 體重: ${data.weight / 10} kg</p>
-          <p style="color: #666; font-size: 14px;">特性: ${abilities}</p>
+          <img src="${spriteUrl}" style="width: 135px; height: 135px; object-fit: contain;" />
+          <div style="color: #38bdf8; font-weight: 700; font-size: 13px; margin-top: 4px;">#${String(data.id).padStart(4, '0')}</div>
+          <h2 style="font-size: 22px; font-weight: 800; margin: 4px 0 6px; color: #f8fafc;">${pureName}</h2>
+          <p style="color: #94a3b8; font-size: 13px;">身高: ${data.height / 10} m ｜ 體重: ${data.weight / 10} kg</p>
+          <p style="color: #64748b; font-size: 12px; margin-top: 4px;">特性代碼: ${abilities}</p>
+          <button class="trainer-btn" style="margin-top: 14px; padding: 10px 20px;" onclick="TeamModule.addPokemon(${payload})">+ 加入我的對戰隊伍</button>
         </div>
-        <hr style="margin: 16px 0; border: none; border-top: 1px solid #eee;" />
-        <h3 style="margin-bottom: 12px; font-size: 16px;">六維種族值</h3>
+        <hr style="margin: 18px 0; border: none; border-top: 1px solid #233252;" />
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h3 style="font-size: 15px; color: #f8fafc;">六維種族值</h3>
+          <span style="font-size: 12px; color: #38bdf8; font-weight: 700;">種族值總和：${totalStats}</span>
+        </div>
         ${statsHtml}
       `;
     } catch (err) {
-      modalBody.innerHTML = '<p style="color: red; text-align: center;">數據載入失敗，請稍後再試</p>';
+      modalBody.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 20px;">數據載入失敗，請稍後再試</p>';
     }
   }
 
@@ -75,9 +105,5 @@ const ModalModule = (() => {
     if (modal) modal.style.display = 'none';
   }
 
-  // 對外公開安全介面
-  return {
-    open,
-    close
-  };
+  return { open, close };
 })();
