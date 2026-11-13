@@ -3,36 +3,11 @@ import uuid
 import httpx
 import asyncio
 from move_service import extract_zh_name, get_pokemon_moves
-
-TYPE_CHART = {
-    "normal": {"rock": 0.5, "ghost": 0.0, "steel": 0.5},
-    "fire": {"fire": 0.5, "water": 0.5, "grass": 2.0, "ice": 2.0, "bug": 2.0, "rock": 0.5, "dragon": 0.5, "steel": 2.0},
-    "water": {"fire": 2.0, "water": 0.5, "grass": 0.5, "ground": 2.0, "rock": 2.0, "dragon": 0.5},
-    "electric": {"water": 2.0, "electric": 0.5, "grass": 0.5, "ground": 0.0, "flying": 2.0, "dragon": 0.5},
-    "grass": {"fire": 0.5, "water": 2.0, "grass": 0.5, "poison": 0.5, "ground": 2.0, "flying": 0.5, "bug": 0.5, "rock": 2.0, "dragon": 0.5, "steel": 0.5},
-    "ice": {"fire": 0.5, "water": 0.5, "grass": 2.0, "ice": 0.5, "ground": 2.0, "flying": 2.0, "dragon": 2.0, "steel": 0.5},
-    "fighting": {"normal": 2.0, "ice": 2.0, "poison": 0.5, "flying": 0.5, "psychic": 0.5, "bug": 0.5, "rock": 2.0, "ghost": 0.0, "dark": 2.0, "steel": 2.0, "fairy": 0.5},
-    "poison": {"grass": 2.0, "poison": 0.5, "ground": 0.5, "rock": 0.5, "ghost": 0.5, "steel": 0.0, "fairy": 2.0},
-    "ground": {"fire": 2.0, "electric": 2.0, "grass": 0.5, "poison": 2.0, "flying": 0.0, "bug": 0.5, "rock": 2.0, "steel": 2.0},
-    "flying": {"electric": 0.5, "grass": 2.0, "fighting": 2.0, "bug": 2.0, "rock": 0.5, "steel": 0.5},
-    "psychic": {"fighting": 2.0, "poison": 2.0, "psychic": 0.5, "dark": 0.0, "steel": 0.5},
-    "bug": {"fire": 0.5, "grass": 2.0, "fighting": 0.5, "poison": 0.5, "flying": 0.5, "psychic": 2.0, "ghost": 0.5, "dark": 2.0, "steel": 0.5, "fairy": 0.5},
-    "rock": {"fire": 2.0, "ice": 2.0, "fighting": 0.5, "ground": 0.5, "flying": 2.0, "bug": 2.0, "steel": 0.5},
-    "ghost": {"normal": 0.0, "psychic": 2.0, "ghost": 2.0, "dark": 0.5},
-    "dragon": {"dragon": 2.0, "steel": 0.5, "fairy": 0.0},
-    "dark": {"fighting": 0.5, "psychic": 2.0, "ghost": 2.0, "dark": 0.5, "fairy": 0.5},
-    "steel": {"fire": 0.5, "water": 0.5, "electric": 0.5, "ice": 2.0, "rock": 2.0, "steel": 0.5, "fairy": 2.0},
-    "fairy": {"fire": 0.5, "fighting": 2.0, "poison": 0.5, "dragon": 2.0, "dark": 2.0, "steel": 0.5}
-}
-
-TYPE_ZH = {
-    "normal": "一般", "fire": "火", "water": "水", "grass": "草", "electric": "電",
-    "ice": "冰", "fighting": "格鬥", "poison": "毒", "ground": "地面", "flying": "飛行",
-    "psychic": "超能力", "bug": "蟲", "rock": "岩石", "ghost": "幽靈", "dragon": "龍",
-    "steel": "鋼", "dark": "惡", "fairy": "妖精"
-}
+from constants import TYPE_CHART
+from battle_analytics import serialize_state
 
 ACTIVE_BATTLES = {}
+
 
 def calc_type_multiplier(move_type: str, defender_types: list) -> float:
     mult = 1.0
@@ -41,28 +16,28 @@ def calc_type_multiplier(move_type: str, defender_types: list) -> float:
         mult *= chart.get(dt, 1.0)
     return mult
 
+
+async def _fetch_single_zh_move(client: httpx.AsyncClient, move: dict) -> dict:
+    if move.get("name") and not move["name"].isascii():
+        return move
+    try:
+        res = await client.get(f"https://pokeapi.co/api/v2/move/{move['id']}", timeout=6.0)
+        if res.status_code == 200:
+            m_data = res.json()
+            m_copy = dict(move)
+            m_copy["name"] = extract_zh_name(m_data.get("names", []), move["name"])
+            m_copy["priority"] = m_data.get("priority", 0)
+            return m_copy
+    except Exception:
+        pass
+    return move
+
+
 async def ensure_zh_moves(client: httpx.AsyncClient, moves: list) -> list:
     if not moves:
         return []
-    result = []
-    for m in moves:
-        if m.get("name") and not m["name"].isascii():
-            result.append(m)
-            continue
-        try:
-            res = await client.get(f"https://pokeapi.co/api/v2/move/{m['id']}", timeout=6.0)
-            if res.status_code == 200:
-                m_data = res.json()
-                zh = extract_zh_name(m_data.get("names", []), m["name"])
-                m_copy = dict(m)
-                m_copy["name"] = zh
-                m_copy["priority"] = m_data.get("priority", 0)
-                result.append(m_copy)
-                continue
-        except Exception:
-            pass
-        result.append(m)
-    return result
+    return list(await asyncio.gather(*[_fetch_single_zh_move(client, m) for m in moves]))
+
 
 async def fetch_combatant(client: httpx.AsyncClient, pokemon_id: int, custom_name: str = None, custom_moves: list = None):
     res, sp_res = await asyncio.gather(
@@ -115,6 +90,7 @@ async def fetch_combatant(client: httpx.AsyncClient, pokemon_id: int, custom_nam
         }
     }
 
+
 async def start_battle(trainer_id: str, player_team_records: list):
     if not player_team_records:
         raise ValueError("你的對戰隊伍目前是空的，請先加入至少 1 隻寶可夢！")
@@ -147,6 +123,7 @@ async def start_battle(trainer_id: str, player_team_records: list):
     ACTIVE_BATTLES[battle_id] = state
     return serialize_state(state, [f"野生挑戰者出現！派出了「{enemy_party[0]['name']}」！"])
 
+
 def compute_damage(attacker: dict, defender: dict, move: dict):
     if random.randint(1, 100) > (move.get("accuracy") or 100):
         return 0, 1.0, False
@@ -162,6 +139,20 @@ def compute_damage(attacker: dict, defender: dict, move: dict):
     raw = (((2 * 50 / 5 + 2) * power * (a_stat / max(1, d_stat))) / 50 + 2) * stab * eff * rand_factor
     return max(1, int(raw)), eff, True
 
+
+def _record_event(events: list, is_player: bool, move: dict, dmg: int, defender: dict, msg: str, fainted: bool = False):
+    events.append({
+        "attacker": "player" if is_player else "enemy",
+        "move_name": move["name"],
+        "move_type": move["type"],
+        "damage": dmg,
+        "target_hp_after": defender["hp"],
+        "target_max_hp": defender["max_hp"],
+        "log": msg,
+        "fainted": fainted
+    })
+
+
 def execute_attack(attacker: dict, defender: dict, move: dict, is_player: bool, state: dict, logs: list, events: list):
     dmg, eff, hit = compute_damage(attacker, defender, move)
     m_name = move["name"]
@@ -171,31 +162,13 @@ def execute_attack(attacker: dict, defender: dict, move: dict, is_player: bool, 
     if not hit:
         msg = f"{attacker['name']} 使出了「{m_name}」，但是沒有命中！"
         logs.append(msg)
-        events.append({
-            "attacker": "player" if is_player else "enemy",
-            "move_name": m_name,
-        "move_type": move["type"],
-            "damage": 0,
-            "target_hp_after": defender["hp"],
-            "target_max_hp": defender["max_hp"],
-            "log": msg,
-            "fainted": False
-        })
+        _record_event(events, is_player, move, 0, defender, msg)
         return False
 
     if eff == 0:
         msg = f"{attacker['name']} 使出了「{m_name}」，但對 {defender['name']} 完全沒有效果..."
         logs.append(msg)
-        events.append({
-            "attacker": "player" if is_player else "enemy",
-            "move_name": m_name,
-        "move_type": move["type"],
-            "damage": 0,
-            "target_hp_after": defender["hp"],
-            "target_max_hp": defender["max_hp"],
-            "log": msg,
-            "fainted": False
-        })
+        _record_event(events, is_player, move, 0, defender, msg)
         return False
 
     actual_dmg = min(defender["hp"], dmg)
@@ -223,17 +196,9 @@ def execute_attack(attacker: dict, defender: dict, move: dict, is_player: bool, 
         defender["stats_log"]["fatal_type"] = move["type"]
         logs.append(f"💥 {defender['name']} 體力耗盡倒下了！")
 
-    events.append({
-        "attacker": "player" if is_player else "enemy",
-        "move_name": m_name,
-        "move_type": move["type"],
-        "damage": actual_dmg,
-        "target_hp_after": defender["hp"],
-        "target_max_hp": defender["max_hp"],
-        "log": msg,
-        "fainted": fainted
-    })
+    _record_event(events, is_player, move, actual_dmg, defender, msg, fainted)
     return fainted
+
 
 def switch_player_pokemon(battle_id: str, target_idx: int):
     state = ACTIVE_BATTLES.get(battle_id)
@@ -250,6 +215,7 @@ def switch_player_pokemon(battle_id: str, target_idx: int):
     state["player_idx"] = target_idx
     logs = [f"回來吧！去吧，{target_mon['name']}！"]
     return serialize_state(state, logs, [])
+
 
 def process_turn(battle_id: str, move_index: int):
     state = ACTIVE_BATTLES.get(battle_id)
@@ -302,99 +268,3 @@ def process_turn(battle_id: str, move_index: int):
             logs.append(f"你派出了「{state['player_party'][next_p]['name']}」接替戰鬥！")
 
     return serialize_state(state, logs, events)
-
-def build_analytics(state: dict):
-    mvp_list = []
-    move_stats = []
-    total_taken = sum(state["damage_taken_by_type"].values()) or 1
-
-    for m in state["player_party"]:
-        s = m["stats_log"]
-        mvp_list.append({
-            "name": m["name"],
-            "damage_dealt": s["damage_dealt"],
-            "damage_taken": s["damage_taken"],
-            "kos": s["kos"],
-            "fatal_type": TYPE_ZH.get(s["fatal_type"], s["fatal_type"]) if s["fatal_type"] else "存活"
-        })
-        for m_name, ms in s["move_usage"].items():
-            if ms["uses"] > 0:
-                move_stats.append({
-                    "pokemon": m["name"],
-                    "move_name": m_name,
-        "move_type": move["type"],
-                    "type_zh": TYPE_ZH.get(ms["type"], ms["type"]),
-                    "uses": ms["uses"],
-                    "avg_dmg": round(ms["total_dmg"] / ms["uses"], 1),
-                    "total_dmg": ms["total_dmg"],
-                    "super_hits": ms["super_hits"]
-                })
-
-    mvp_list.sort(key=lambda x: x["damage_dealt"], reverse=True)
-    move_stats.sort(key=lambda x: x["total_dmg"], reverse=True)
-
-    advice = []
-    if state["damage_taken_by_type"]:
-        worst_type, worst_dmg = max(state["damage_taken_by_type"].items(), key=lambda x: x[1])
-        pct = round((worst_dmg / total_taken) * 100)
-        if pct >= 30:
-            advice.append(f"防守預警：敵方「{TYPE_ZH.get(worst_type, worst_type)}屬性」招式對你造成了高達 {pct}% 的總傷害，建議隊伍補入抵抗該屬性的聯防寶可夢。")
-
-    zero_dmg = [p["name"] for p in mvp_list if p["damage_dealt"] == 0]
-    if zero_dmg:
-        advice.append(f"輸出檢討：「{', '.join(zero_dmg)}」本場未造成任何有效傷害即退場，建議善用自由換人避開不利屬性或調整出戰順序。")
-
-    if not advice:
-        advice.append("陣容表現均衡！各屬性打擊面與承傷配置相當穩定，可嘗試挑戰更高強度的隨機對手。")
-
-    return {
-        "winner": state["winner"],
-        "total_actions": state["actions_count"],
-        "mvp_ranking": mvp_list,
-        "move_analytics": move_stats,
-        "tactical_advice": advice
-    }
-
-def serialize_state(state: dict, logs: list, events: list = None):
-    p_mon = state["player_party"][state["player_idx"]]
-    e_mon = state["enemy_party"][state["enemy_idx"]]
-    res = {
-        "battle_id": state["battle_id"],
-        "finished": state["finished"],
-        "winner": state["winner"],
-        "logs": logs,
-        "events": events or [],
-        "player_party": [
-            {
-                "idx": i,
-                "name": m["name"],
-                "sprite": m["front_sprite"],
-                "hp": m["hp"],
-                "max_hp": m["max_hp"],
-                "active": i == state["player_idx"]
-            }
-            for i, m in enumerate(state["player_party"])
-        ],
-        "player": {
-            "name": p_mon["name"],
-            "sprite": p_mon["back_sprite"],
-            "hp": p_mon["hp"],
-            "max_hp": p_mon["max_hp"],
-            "spe": p_mon["spe"],
-            "moves": p_mon["moves"],
-            "alive_count": sum(1 for m in state["player_party"] if m["hp"] > 0),
-            "total_count": len(state["player_party"])
-        },
-        "enemy": {
-            "name": e_mon["name"],
-            "sprite": e_mon["front_sprite"],
-            "hp": e_mon["hp"],
-            "max_hp": e_mon["max_hp"],
-            "spe": e_mon["spe"],
-            "alive_count": sum(1 for m in state["enemy_party"] if m["hp"] > 0),
-            "total_count": len(state["enemy_party"])
-        }
-    }
-    if state["finished"]:
-        res["analytics"] = build_analytics(state)
-    return res
