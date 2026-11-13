@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any
 import database
+import gba_save_service
 import move_service
 import battle_engine
 
@@ -109,5 +110,75 @@ def api_battle_switch(battle_id: str, req: SwitchRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-import rpg_routes
-app.include_router(rpg_routes.router)
+
+
+from fastapi.staticfiles import StaticFiles
+import os
+_public_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "public"))
+app.mount("/", StaticFiles(directory=_public_dir, html=True), name="public")
+
+
+class GbaSaveRequest(BaseModel):
+    party: list = []
+    dex: dict = {}
+    bag: dict = {}
+
+@app.get("/api/gba/save/{trainer_id}")
+def api_get_gba_save(trainer_id: str):
+    import sqlite3, json
+    db_file = os.path.join(os.path.dirname(__file__), "pokedex.db")
+    with sqlite3.connect(db_file) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS trainer_gba_save (
+                trainer_id TEXT PRIMARY KEY,
+                party_json TEXT NOT NULL,
+                dex_json TEXT NOT NULL,
+                bag_json TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        row = conn.execute(
+            "SELECT party_json, dex_json, bag_json, updated_at FROM trainer_gba_save WHERE trainer_id = ?",
+            (trainer_id.strip(),)
+        ).fetchone()
+    if not row:
+        return {"save": None}
+    return {
+        "save": {
+            "party": json.loads(row[0]),
+            "dex": json.loads(row[1]),
+            "bag": json.loads(row[2]),
+            "updated_at": row[3]
+        }
+    }
+
+@app.post("/api/gba/save/{trainer_id}")
+def api_post_gba_save(trainer_id: str, req: GbaSaveRequest):
+    import sqlite3, json
+    db_file = os.path.join(os.path.dirname(__file__), "pokedex.db")
+    with sqlite3.connect(db_file) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS trainer_gba_save (
+                trainer_id TEXT PRIMARY KEY,
+                party_json TEXT NOT NULL,
+                dex_json TEXT NOT NULL,
+                bag_json TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.execute("""
+            INSERT INTO trainer_gba_save (trainer_id, party_json, dex_json, bag_json, updated_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(trainer_id) DO UPDATE SET
+                party_json = excluded.party_json,
+                dex_json = excluded.dex_json,
+                bag_json = excluded.bag_json,
+                updated_at = CURRENT_TIMESTAMP
+        """, (
+            trainer_id.strip(),
+            json.dumps(req.party, ensure_ascii=False),
+            json.dumps(req.dex, ensure_ascii=False),
+            json.dumps(req.bag, ensure_ascii=False)
+        ))
+        conn.commit()
+    return {"status": "ok"}

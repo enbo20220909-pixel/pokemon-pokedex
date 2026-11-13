@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POKOPIA EMERALD HD - 高畫質全圖鑑 RPG</title>
+  <style>
+    * { box-sizing: border-box; user-select: none; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1b2838, #0b0f17);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      color: #e2e8f0;
+      padding: 16px;
+    }
+
+    .gba-shell {
+      background: linear-gradient(160deg, #4b559c, #2f366e);
+      padding: 20px 42px 24px 42px;
+      border-radius: 34px 34px 46px 46px;
+      box-shadow:
+        0 24px 55px rgba(0, 0, 0, 0.78),
+        inset 0 3px 6px rgba(255, 255, 255, 0.32),
+        inset -4px -6px 14px rgba(0, 0, 0, 0.45);
+      border: 3px solid #222652;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .gba-lens {
+      background-color: #181a22;
+      padding: 16px 24px 12px 24px;
+      border-radius: 14px 14px 28px 28px;
+      box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .power-led {
+      position: absolute;
+      right: 12px;
+      top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: bold;
+      color: #8b949e;
+    }
+    .power-led::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #2ea043;
+      box-shadow: 0 0 8px #3fb950;
+    }
+
+    /* 1:1 實體高解析度 720x480 畫布，徹底消除放大模糊 */
+    canvas#gba-canvas {
+      width: 720px;
+      height: 480px;
+      background-color: #68d058;
+      border: 2px solid #090a0f;
+      display: block;
+    }
+
+    .gba-logo {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #9ea4b8;
+      font-style: italic;
+    }
+    .gba-logo span {
+      font-style: normal;
+      font-size: 11px;
+      background: #282d3d;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 6px;
+      color: #4ade80;
+    }
+
+    .control-deck {
+      margin-top: 14px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      justify-content: center;
+      max-width: 780px;
+      font-size: 13px;
+    }
+
+    .deck-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    input[type="number"] {
+      width: 76px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #38bdf8;
+      font-family: inherit;
+      font-weight: bold;
+    }
+
+    button.retro-btn {
+      background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+      color: #fff;
+      border: 1px solid #60a5fa;
+      border-radius: 5px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button.retro-btn:hover { filter: brightness(1.12); }
+    button.retro-btn.green {
+      background: linear-gradient(180deg, #22c55e, #15803d);
+      border-color: #4ade80;
+    }
+
+    kbd {
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: #facc15;
+      font-weight: bold;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="gba-shell">
+    <div class="gba-lens">
+      <div class="power-led">POWER</div>
+      <canvas id="gba-canvas" width="720" height="480"></canvas>
+      <div class="gba-logo">GAME BOY ADVANCE HD <span>NATIONAL DEX 1-1025</span></div>
+    </div>
+  </div>
+
+  <div class="control-deck">
+    <div class="deck-group">
+      <button class="retro-btn green" id="btn-reroll">🎲 隨機抽選初始夥伴 (1~1025)</button>
+      <input type="number" id="input-dex-id" min="1" max="1025" placeholder="編號" />
+      <button class="retro-btn" id="btn-set-starter">指定夥伴</button>
+    </div>
+    <div class="deck-group">
+      <span><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 移動/選單</span>
+      <span><kbd>Shift</kbd> 跑步</span>
+      <span><kbd>Z</kbd> 確認</span>
+      <span><kbd>X</kbd> 返回</span>
+      <span><kbd>Enter</kbd> 全國圖鑑</span>
+      <span><kbd>R</kbd> 騎乘夥伴</span>
+      <span><kbd>M</kbd> 音效開關</span>
+    </div>
+  </div>
+
+<script>
+(() => {
+  
+  // ==========================================
+  // 0. 原生 Web Audio 8-bit 復古掌機音效引擎
+  // ==========================================
+  const RetroAudio = (() => {
+    let ctx = null;
+    let muted = false;
+
+    function ensureCtx() {
+      if (!ctx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) ctx = new AudioCtx();
+      }
+      if (ctx && ctx.state === "suspended") ctx.resume();
+      return ctx;
+    }
+
+    function playTone(freq, duration, type = "square", volume = 0.08, delay = 0) {
+      if (muted) return;
+      const ac = ensureCtx();
+      if (!ac) return;
+      const start = ac.currentTime + delay;
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(volume, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.start(start);
+      osc.stop(start + duration);
+    }
+
+    return {
+      isMuted: () => muted,
+      toggleMute: () => { muted = !muted; return muted; },
+      blip: () => playTone(880, 0.06, "square", 0.07),
+      heal: () => {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => playTone(f, 0.14, "triangle", 0.1, i * 0.12));
+      },
+      encounter: () => {
+        [330, 440, 392, 523, 494, 659].forEach((f, i) => playTone(f, 0.07, "sawtooth", 0.08, i * 0.055));
+      },
+      shiny: () => {
+        [1046.5, 1318.5, 1567.98, 2093.0, 1567.98, 2093.0].forEach((f, i) => playTone(f, 0.12, "sine", 0.12, i * 0.08));
+      },
+      hit: () => {
+        playTone(160, 0.12, "sawtooth", 0.12);
+        playTone(95, 0.15, "square", 0.1, 0.04);
+      },
+      ballThrow: () => {
+        playTone(420, 0.08, "triangle", 0.09);
+        playTone(680, 0.12, "triangle", 0.09, 0.07);
+      },
+      ballShake: () => playTone(260, 0.07, "square", 0.06),
+      catchSuccess: () => {
+        [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5].forEach((f, i) => playTone(f, 0.16, "square", 0.09, i * 0.11));
+      }
+    };
+  })();
+
+  const canvas = document.getElementById("gba-canvas");
+  const ctx = canvas.getContext("2d");
+
+  // 支援高 DPI 螢幕 (Retina) 超銳利文字與向量渲染
+  const DPR = window.devicePixelRatio || 1;
+  const LOGICAL_W = 720;
+  const LOGICAL_H = 480;
+  canvas.width = LOGICAL_W * DPR;
+  canvas.height = LOGICAL_H * DPR;
+  ctx.scale(DPR, DPR);
+
+  // 網格參數升級為 48x48 (視野維持 15x10 格，精細度提升 3 倍)
+  const TILE = 48;
+  const PIXEL_SCALE = 3; // 16x16 圖塊放大 3 倍為 48x48 清晰方塊
+  const COLS = 24;
+  const ROWS = 20;
+  const VIEW_COLS = 15;
+  const VIEW_ROWS = 10;
+  const MAX_DEX_ID = 1025;
+
+  const FONT_FAMILY = '-apple-system, BlinkMacSystemFont, "Noto Sans TC", "Microsoft JhengHei", sans-serif';
+
+  // ==========================================
+  // 1. 快取與圖鑑進度儲存 (v2 升級高畫質圖檔網址)
+  // ==========================================
+  const CACHE_KEY = "pokopia_gba_hd_cache_v3";
+  const DEX_KEY = "pokopia_gba_dex_progress_v1";
+
+  let pokemonCache = {};
+  try {
+    pokemonCache = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
+  } catch (e) {
+    pokemonCache = {};
+  }
+
+  let dexProgress = { seen: {}, caught: {} };
+  try {
+    const savedDex = JSON.parse(localStorage.getItem(DEX_KEY) || "null");
+    if (savedDex && savedDex.seen && savedDex.caught) dexProgress = savedDex;
+  } catch (e) {}
+
+
+  // ==========================================
+  // 訓練家帳號綁定模組 (與 Python 後端 SQLite 同步)
+  // ==========================================
+  const BACKEND_API = "http://127.0.0.1:8001/api";
+  
+  // 主動讀取主網站(父視窗)的訓練家登入狀態，確保重新整理也不掉線
+  try {
+    if (window.parent && window.parent !== window) {
+      const parentTid = window.parent.localStorage.getItem("trainer_id");
+      if (parentTid) {
+        localStorage.setItem("trainer_id", parentTid);
+      }
+    }
+  } catch (e) {}
+
+  let boundTrainerId = localStorage.getItem("trainer_id") || "";
+  let isSyncingAccount = false;
+
+  function getDexStorageKey() {
+    return boundTrainerId ? `pokopia_gba_dex_${boundTrainerId}` : "pokopia_gba_dex_guest";
+  }
+
+  function loadTrainerDexProgress() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(getDexStorageKey()) || "null");
+      dexProgress = (saved && saved.seen && saved.caught) ? saved : { seen: {}, caught: {} };
+    } catch (e) {
+      dexProgress = { seen: {}, caught: {} };
+    }
+  }
+
+  async function hydratePartyFromCaughtDex() {
+    const caughtIds = Object.keys(dexProgress.caught || {}).map(Number).filter(n => n > 0);
+    if (caughtIds.length === 0) return false;
+    const restored = [];
+    for (const cid of caughtIds.slice(0, 30)) {
+      const isSh = Boolean(dexProgress.shiny && dexProgress.shiny[cid]);
+      const c = await buildCombatant(cid, 12, isSh);
+      c.name = dexProgress.caught[cid] || c.name;
+      restored.push(c);
+    }
+    if (restored.length > 0) {
+      player.party = restored;
+      player.activeIdx = 0;
+      return true;
+    }
+    return false;
+  }
+
+  async function syncAccountTeamOrStarter() {
+    if (isSyncingAccount) return;
+    isSyncingAccount = true;
+    try {
+      try {
+        if (window.parent && window.parent !== window) {
+          const pTid = window.parent.localStorage.getItem("trainer_id");
+          if (pTid) localStorage.setItem("trainer_id", pTid);
+        }
+      } catch (e) {}
+
+      boundTrainerId = (localStorage.getItem("trainer_id") || "").trim();
+      loadTrainerDexProgress();
+
+      if (!boundTrainerId) {
+        await hydratePartyFromCaughtDex();
+        gameState = "OVERWORLD";
+        dialogQueue = ["請先在上方輸入訓練家代號登入，即可同步雲端永久存檔！"];
+        dialogIdx = 0;
+        return;
+      }
+
+      gameState = "LOADING";
+      loadingText = `正在同步訓練家「${boundTrainerId}」的完整存檔...`;
+
+      const res = await fetch(`${BACKEND_API}/gba/save/${encodeURIComponent(boundTrainerId)}`);
+      if (!res.ok) throw new Error("後端讀取失敗");
+      const payload = await res.json();
+      const saved = payload.save;
+
+      // 情境 A：SQLite 資料庫已有該帳號存檔 -> 完整還原夥伴、圖鑑、位置與坐騎
+      if (saved && Array.isArray(saved.party) && saved.party.length > 0) {
+        const mergedSeen = { ...(dexProgress.seen || {}), ...((saved.dex && saved.dex.seen) || {}) };
+        const mergedCaught = { ...(dexProgress.caught || {}), ...((saved.dex && saved.dex.caught) || {}) };
+        const mergedShiny = { ...(dexProgress.shiny || {}), ...((saved.dex && saved.dex.shiny) || {}) };
+        dexProgress = { seen: mergedSeen, caught: mergedCaught, shiny: mergedShiny };
+        saveLocalData();
+
+        if (saved.bag) {
+          player.bag = { pokeball: saved.bag.pokeball ?? 10, potion: saved.bag.potion ?? 5 };
+          if (saved.bag._pos && typeof MAPS !== "undefined" && MAPS[saved.bag._pos.mapId]) {
+            currentMapId = saved.bag._pos.mapId;
+            player.mapId = currentMapId;
+            player.gx = saved.bag._pos.gx ?? 12;
+            player.gy = saved.bag._pos.gy ?? 5;
+            player.px = player.gx * TILE;
+            player.py = player.gy * TILE;
+          }
+          if (saved.bag._mount && saved.bag._mount.id) {
+            buildCombatant(saved.bag._mount.id, 15, Boolean(saved.bag._mount.isShiny)).then(m => {
+              m.name = saved.bag._mount.name || m.name;
+              player.mountMon = m;
+            }).catch(() => {});
+          }
+        }
+
+        const combatants = [];
+        for (const item of saved.party) {
+          const c = await buildCombatant(item.id, item.level || 10, Boolean(item.isShiny));
+          c.name = item.name || c.name;
+          c.hp = Math.min(c.maxHp, item.hp ?? c.maxHp);
+          c.exp = item.exp || 0;
+          combatants.push(c);
+        }
+        player.party = combatants;
+        player.activeIdx = Math.max(0, combatants.findIndex(m => m.hp > 0));
+        await persistSaveToBackend();
+        gameState = "OVERWORLD";
+        dialogQueue = [`歡迎回來，訓練家「${boundTrainerId}」！已同步 ${combatants.length} 隻夥伴與 ${Object.keys(mergedCaught).length} 筆圖鑑。`];
+        dialogIdx = 0;
+        return;
+      }
+
+      // 情境 B：資料庫尚無隊伍，但本地圖鑑已有收服紀錄 -> 自動把圖鑑裡收服的寶可夢轉為隨行隊伍並寫入 SQLite！
+      const restoredFromDex = await hydratePartyFromCaughtDex();
+      if (restoredFromDex) {
+        await persistSaveToBackend();
+        gameState = "OVERWORLD";
+        dialogQueue = [`已從圖鑑自動還原 ${player.party.length} 隻已收服夥伴並建立帳號存檔！`];
+        dialogIdx = 0;
+        return;
+      }
+
+      // 情境 C：真正全新空白帳號（資料庫與圖鑑皆 0 隻）-> 發放唯一一次初始夥伴
+      dexProgress = { seen: {}, caught: {}, shiny: {} };
+      await assignStarter(null);
+      await persistSaveToBackend();
+      dialogQueue = [`訓練家「${boundTrainerId}」初次報到！獲得初始夥伴「${player.party[0].name}」！`];
+      dialogIdx = 0;
+    } catch (err) {
+      await hydratePartyFromCaughtDex();
+      gameState = "OVERWORLD";
+    } finally {
+      isSyncingAccount = false;
+    }
+  }
+
+  window.addEventListener("message", (ev) => {
+    if (ev.data && ev.data.type === "SYNC_TRAINER") {
+      const latestId = (ev.data.trainerId || "").trim();
+      if (latestId) localStorage.setItem("trainer_id", latestId);
+      else localStorage.removeItem("trainer_id");
+      syncAccountTeamOrStarter();
+    }
+  });
+
+  // 每 8 秒自動向 SQLite 背景存檔一次，確保任何進度都不遺失
+  setInterval(() => {
+    if (boundTrainerId && player.party.length > 0 && gameState !== "LOADING") {
+      persistSaveToBackend();
+    }
+  }, 8000);
+
+  function saveLocalData() {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(pokemonCache));
+      localStorage.setItem(getDexStorageKey(), JSON.stringify(dexProgress));
+    } catch (e) {}
+  }
+
+  function recordDex(id, name, isCaught = false, isShiny = false) {
+    if (!dexProgress.shiny) dexProgress.shiny = {};
+    dexProgress.seen[id] = name;
+    if (isCaught) dexProgress.caught[id] = name;
+    if (isShiny) dexProgress.shiny[id] = true;
+    saveLocalData();
+  }
+
+  const imageCache = {};
+  function loadSpriteImage(url) {
+    if (!url) return Promise.resolve(null);
+    if (imageCache[url]) return Promise.resolve(imageCache[url]);
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        imageCache[url] = img;
+        resolve(img);
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+
+  const TYPE_ZH = {
+    normal: "一般", fire: "火", water: "水", grass: "草", electric: "電",
+    ice: "冰", fighting: "格鬥", poison: "毒", ground: "地面", flying: "飛行",
+    psychic: "超能力", bug: "蟲", rock: "岩石", ghost: "幽靈", dragon: "龍",
+    dark: "惡", steel: "鋼", fairy: "妖精"
+  };
+
+  const TYPE_CHART = {
+    normal: { rock: 0.5, ghost: 0.0, steel: 0.5 },
+    fire: { fire: 0.5, water: 0.5, grass: 2.0, ice: 2.0, bug: 2.0, rock: 0.5, dragon: 0.5, steel: 2.0 },
+    water: { fire: 2.0, water: 0.5, grass: 0.5, ground: 2.0, rock: 2.0, dragon: 0.5 },
+    electric: { water: 2.0, electric: 0.5, grass: 0.5, ground: 0.0, flying: 2.0, dragon: 0.5 },
+    grass: { fire: 0.5, water: 2.0, grass: 0.5, poison: 0.5, ground: 2.0, flying: 0.5, bug: 0.5, rock: 2.0, dragon: 0.5, steel: 0.5 },
+    ice: { fire: 0.5, water: 0.5, grass: 2.0, ice: 0.5, ground: 2.0, flying: 2.0, dragon: 2.0, steel: 0.5 },
+    fighting: { normal: 2.0, ice: 2.0, poison: 0.5, flying: 0.5, psychic: 0.5, bug: 0.5, rock: 2.0, ghost: 0.0, dark: 2.0, steel: 2.0, fairy: 0.5 },
+    poison: { grass: 2.0, poison: 0.5, ground: 0.5, rock: 0.5, ghost: 0.5, steel: 0.0, fairy: 2.0 },
+    ground: { fire: 2.0, electric: 2.0, grass: 0.5, poison: 2.0, flying: 0.0, bug: 0.5, rock: 2.0, steel: 2.0 },
+    flying: { electric: 0.5, grass: 2.0, fighting: 2.0, bug: 2.0, rock: 0.5, steel: 0.5 },
+    psychic: { fighting: 2.0, poison: 2.0, psychic: 0.5, dark: 0.0, steel: 0.5 },
+    bug: { fire: 0.5, grass: 2.0, fighting: 0.5, poison: 0.5, flying: 0.5, psychic: 2.0, ghost: 0.5, dark: 2.0, steel: 0.5, fairy: 0.5 },
+    rock: { fire: 2.0, ice: 2.0, fighting: 0.5, ground: 0.5, flying: 2.0, bug: 2.0, steel: 0.5 },
+    ghost: { normal: 0.0, psychic: 2.0, ghost: 2.0, dark: 0.5 },
+    dragon: { dragon: 2.0, steel: 0.5, fairy: 0.0 },
+    dark: { fighting: 0.5, psychic: 2.0, ghost: 2.0, dark: 0.5, fairy: 0.5 },
+    steel: { fire: 0.5, water: 0.5, electric: 0.5, ice: 2.0, rock: 2.0, steel: 0.5, fairy: 2.0 },
+    fairy: { fire: 0.5, fighting: 2.0, poison: 0.5, dragon: 2.0, dark: 2.0, steel: 0.5 }
+  };
+
+  function calcTypeMultiplier(moveType, defTypes) {
+    let mult = 1.0;
+    const chart = TYPE_CHART[moveType] || {};
+    for (const dt of defTypes) {
+      mult *= (chart[dt] !== undefined ? chart[dt] : 1.0);
+    }
+    return mult;
+  }
+
+  // ==========================================
+  // 2. PokéAPI 動態資料抓取 (優先載入高畫質立繪)
+  // ==========================================
+  async function fetchPokemonData(id) {
+    if (pokemonCache[id]) {
+      return pokemonCache[id];
+    }
+
+    const [pokeRes, speciesRes] = await Promise.all([
+      fetch(`https://pokeapi.co/api/v2/pokemon/${id}`),
+      fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`)
+    ]);
+
+    if (!pokeRes.ok) throw new Error(`無法取得編號 #${id} 資料`);
+    const poke = await pokeRes.json();
+    const species = speciesRes.ok ? await speciesRes.json() : { names: [] };
+
+    const zhObj =
+      species.names.find(n => n.language.name === "zh-Hant") ||
+      species.names.find(n => n.language.name === "zh-Hans");
+    const displayName = zhObj ? zhObj.name : poke.name.toUpperCase();
+
+    const stats = {};
+    for (const s of poke.stats) {
+      stats[s.stat.name] = s.base_stat;
+    }
+
+    const types = poke.types.map(t => t.type.name);
+    const primaryType = types[0] || "normal";
+
+    const rawMoves = poke.moves.slice(0, 16);
+    const pickedMoves = [];
+    const step = Math.max(1, Math.floor(rawMoves.length / 4));
+    for (let i = 0; i < rawMoves.length && pickedMoves.length < 4; i += step) {
+      const mName = rawMoves[i].move.name.replace(/-/g, " ").toUpperCase();
+      pickedMoves.push({
+        name: mName.slice(0, 14),
+        type: pickedMoves.length % 2 === 0 ? primaryType : (types[1] || "normal"),
+        power: 45 + (pickedMoves.length * 15)
+      });
+    }
+    if (pickedMoves.length === 0) {
+      pickedMoves.push({ name: "TACKLE", type: "normal", power: 40 });
+    }
+
+    // 優先使用 475x475 高解析官方插畫，若無則降級使用一般正面圖
+    const art = poke.sprites.other && poke.sprites.other["official-artwork"];
+    const home = poke.sprites.other && poke.sprites.other.home;
+    const hdFrontUrl = (art && art.front_default) || (home && home.front_default) || poke.sprites.front_default;
+    const hdShinyUrl = (art && art.front_shiny) || (home && home.front_shiny) || poke.sprites.front_shiny || hdFrontUrl;
+
+    const data = {
+      id: poke.id,
+      name: displayName,
+      types,
+      baseHp: stats["hp"] || 60,
+      baseAtk: Math.max(stats["attack"] || 60, stats["special-attack"] || 60),
+      baseDef: Math.max(stats["defense"] || 60, stats["special-defense"] || 60),
+      baseSpe: stats["speed"] || 60,
+      bst: Object.values(stats).reduce((a, b) => a + b, 0),
+      frontUrl: hdFrontUrl,
+      shinyUrl: hdShinyUrl,
+      pixelFrontUrl: poke.sprites.front_default,
+      pixelShinyUrl: poke.sprites.front_shiny,
+      moves: pickedMoves
+    };
+
+    pokemonCache[id] = data;
+    saveLocalData();
+    return data;
+  }
+
+  async function buildCombatant(id, level = 10, isShiny = false) {
+    const data = await fetchPokemonData(id);
+    const targetUrl = isShiny ? (data.shinyUrl || data.frontUrl) : (data.frontUrl || data.pixelFrontUrl);
+    const frontImg = await loadSpriteImage(targetUrl);
+    const calcStatsForLevel = (lvl) => ({
+      maxHp: Math.floor((data.baseHp * 2 * lvl) / 100 + lvl + 15),
+      atk: Math.floor((data.baseAtk * 2 * lvl) / 100 + 5),
+      def: Math.floor((data.baseDef * 2 * lvl) / 100 + 5),
+      spe: Math.floor((data.baseSpe * 2 * lvl) / 100 + 5),
+      nextExp: Math.floor(15 + Math.pow(lvl, 1.65) * 8)
+    });
+    const st = calcStatsForLevel(level);
+    return {
+      ...data,
+      isShiny,
+      level,
+      hp: st.maxHp,
+      maxHp: st.maxHp,
+      atk: st.atk,
+      def: st.def,
+      spe: st.spe,
+      exp: 0,
+      nextExp: st.nextExp,
+      frontImg
+    };
+  }
+
+  // ==========================================
+  // 3. GBA 寶石版地圖圖塊定義
+  // ==========================================
+  const PAL = {
+    ".": null, "K": "#182028", "W": "#ffffff",
+    "g": "#70d860", "G": "#50b848", "d": "#288838", "D": "#185828",
+    "b": "#885830", "B": "#583818", "s": "#f8e8a8", "S": "#e0c880",
+    "w": "#3898f8", "c": "#78d8ff", "r": "#f04838", "R": "#b82018",
+    "u": "#3878e8", "U": "#2048a8", "m": "#f0f0e8", "M": "#c8c8b8",
+    "y": "#f8d030", "f": "#f8c898", "h": "#283038", "e": "#e83838", "p": "#f8f8f8"
+  };
+
+  const TILES = {
+    grass: [
+      "gggggggggggggggg","gggggggggggggggg","ggGggggggggggggg","gggGggggggggGggg",
+      "gggggggggggGgggg","gggggggggggggggg","gggggggggggggggg","gggggggggggggggg",
+      "gggggggGgggggggg","ggggggGggggggggg","gggggggggggggggg","ggggggggggggGggg",
+      "gggggggggggGgggg","ggGggggggggggggg","gggggggggggggggg","gggggggggggggggg"
+    ],
+    tree: [
+      "....KKKKKKKK....","..KKddddddddKK..",".KddGGGGGGGGddK.","KdGGGGddddGGGGdK",
+      "KdGGddGGGGddGGdK","KdGGGGGGGGGGGGdK","KddGGGGGGGGGGddK",".KddddddddddddK.",
+      "KddGGGGGGGGGGddK","KdGGGGddddGGGGdK","KddGGGGGGGGGGddK",".KKddddddddddKK.",
+      "...KKDbbbbDKK...",".....KbbbbK.....","....KKBbbBKK....","...KKKKKKKKKK..."
+    ],
+    tallGrass: [
+      "................",".d..d..d..d..d..",".dd.dd.dd.dd.dd.",".dDddDddDddDddD.",
+      "..dddddddddddd..",".d..d..d..d..d..",".dd.dd.dd.dd.dd.",".dDddDddDddDddD.",
+      "..DDDDDDDDDDDD..",".d..d..d..d..d..",".dd.dd.dd.dd.dd.",".dDddDddDddDddD.",
+      "..dddddddddddd..","...DDDDDDDDDD...","................","................"
+    ],
+    sand: [
+      "ssssssssssssssss","ssssssssssssssss","ssSsssssssssssss","ssssssssssssSsss",
+      "ssssssssssssssss","ssssssssssssssss","sssssssSssssssss","ssssssssssssssss",
+      "ssssssssssssssss","sssSssssssssssss","sssssssssssssSss","ssssssssssssssss",
+      "ssssssssssssssss","ssssssssSsssssss","ssssssssssssssss","ssssssssssssssss"
+    ],
+    waterA: [
+      "wwwwwwwwwwwwwwww","wcccwwwwwwwwwwww","wwwwwwwwwwcccwww","wwwwwwwwwwwwwwww",
+      "wwwwwcccwwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwwcccw","wwwwwwwwwwwwwwww",
+      "wwcccwwwwwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwcccwwwww","wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww","wcccwwwwwwwwwwww","wwwwwwwwwcccwwww","wwwwwwwwwwwwwwww"
+    ],
+    waterB: [
+      "wwwwwwwwwwwwwwww","wwwwcccwwwwwwwww","wwwwwwwwwwwcccww","wwwwwwwwwwwwwwww",
+      "wwwwwwcccwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwcccww","wwwwwwwwwwwwwwww",
+      "wwwcccwwwwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwwcccwwww","wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww","wwcccwwwwwwwwwww","wwwwwwwwwwcccwww","wwwwwwwwwwwwwwww"
+    ],
+    centerWall: [
+      "KKKKKKKKKKKKKKKK","KrrrrrrrrrrrrrrK","KrWWWWrrrrrrrrrK","KrrrrrrrrrrrrrrK",
+      "KRRRRRRRRRRRRRRK","KKKKKKKKKKKKKKKK","KmmmmmmmmmmmmmmK","KmKKKKmmmmKKKKmK",
+      "KmKccKmmmmKccKmK","KmKccKmmmmKccKmK","KmKKKKmmmmKKKKmK","KmmmmmmmmmmmmmmK",
+      "KmmmmmmmmmmmmmmK","KMMMMMMMMMMMMMMK","KMMMMMMMMMMMMMMK","KKKKKKKKKKKKKKKK"
+    ],
+    centerDoor: [
+      "KKKKKKKKKKKKKKKK","KrrrrrKKKKrrrrrK","KrrrrKyyyyKrrrrK","KrrrKyyWWyyKrrrK",
+      "KRRRRKyyyyKRRRRK","KKKKKKKKKKKKKKKK","KmmmKKKKKKKKmmmK","KmmmKccKKccKmmmK",
+      "KmmmKccKKccKmmmK","KmmmKccKKccKmmmK","KmmmKccKKccKmmmK","KmmmKccKKccKmmmK",
+      "KmmmKccKKccKmmmK","KMMMKccKKccKMMMK","KMMMKccKKccKMMMK","KKKKKKKKKKKKKKKK"
+    ],
+    labWall: [
+      "KKKKKKKKKKKKKKKK","KuuuuuuuuuuuuuuK","KuWWWWuuuuuuuuuK","KuuuuuuuuuuuuuuK",
+      "KUUUUUUUUUUUUUUK","KKKKKKKKKKKKKKKK","KmmmmmmmmmmmmmmK","KmKKKKmmmmKKKKmK",
+      "KmKccKmmmmKccKmK","KmKKKKmmmmKKKKmK","KmmmmmmmmmmmmmmK","KmKKKKmmmmKKKKmK",
+      "KmKccKmmmmKccKmK","KmKKKKmmmmKKKKmK","KMMMMMMMMMMMMMMK","KKKKKKKKKKKKKKKK"
+    ],
+    labDoor: [
+      "KKKKKKKKKKKKKKKK","KuuuuuKKKKuuuuuK","KuuuuKWWWWKuuuuK","KuuuuKWWWWKuuuuK",
+      "KUUUUUKKKKUUUUUK","KKKKKKKKKKKKKKKK","KmmmKKKKKKKKmmmK","KmmmKbbKKbbKmmmK",
+      "KmmmKbbKKbbKmmmK","KmmmKbbKKbbKmmmK","KmmmKbyKKybKmmmK","KmmmKbbKKbbKmmmK",
+      "KmmmKbbKKbbKmmmK","KMMMKbbKKbbKMMMK","KMMMKbbKKbbKMMMK","KKKKKKKKKKKKKKKK"
+    ],
+    profNpc: [
+      ".....KKKKKK.....","....KhhhhhhK....","...KhhhhhhhhK...","...KKKKKKKKKK...",
+      "...KffffffffK...","...KfKffffKfK...","...KffffffffK...","....KffffffK....",
+      "..KKppppppppKK..",".KppppuuuuuuuuK.",".KfKppppppppKfK.",".KfKppppppppKfK.",
+      "...KppppppppK...","....KuuKKuuK....","....KbbKKbbK....","....KKKKKKKK...."
+    ],
+    player: [
+      ".....KKKKKK.....","....KWWWWWWK....","...KWWWWWWWWK...","..KKKKKKKKKKKK..",
+      "...KffffffffK...","...KfKffffKfK...","...KffffffffK...","....KffffffK....",
+      "..KKeeeeeeeeKK..",".KeeKeeeeeeKeeK.",".KfKeeeeeeeeKfK.",".KfKeeeeeeeeKfK.",
+      "...KuuuuuuuuK...","....KuuKKuuK....","....KeeKKeeK....","....KKKKKKKK...."
+    ]
+  };
+
+  const MAP = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,2,2,2,2,2,2,0,1],
+    [1,0,5,5,5,0,0,0,1,0,7,7,7,7,0,0,2,2,2,2,2,2,0,1],
+    [1,0,5,6,5,0,0,0,0,0,7,8,7,7,0,0,0,2,2,2,2,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1],
+    [1,2,2,0,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,2,2,2,0,1],
+    [1,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+    [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+    [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+    [4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4],
+    [4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4],
+    [4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4],
+    [4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4],
+    [4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4],
+    [4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4]
+  ];
+
+  // ==========================================
+  // 4. 遊戲狀態
+  // ==========================================
+  let gameState = "LOADING";
+  let currentMapId = "town";
+  let loadingText = "正在連線 PokéAPI 召喚高畫質初始夥伴...";
+  let frameCount = 0;
+  const keys = {};
+
+  const player = {
+    gx: 12,
+    gy: 5,
+    px: 12 * TILE,
+    py: 5 * TILE,
+    dir: "down",
+    moving: false,
+    running: false,
+    riding: false,
+    mountMon: null,
+    stepFrame: 0,
+    party: [],
+    activeIdx: 0,
+    bag: { pokeball: 10, potion: 5 }
+  };
+
+  let dialogQueue = [];
+  let dialogIdx = 0;
+  let dexScrollOffset = 0;
+  let dexCursor = 0;
+  let dexEntries = [];
+
+  async function selectMountFromPokedex(entry) {
+    if (!entry) return;
+    gameState = "LOADING";
+    loadingText = `正在召喚坐騎 #${String(entry.id).padStart(4, "0")}「${entry.name}」...`;
+    try {
+      // 優先從隨行隊伍尋找現成夥伴，否則即時從圖鑑快取/API 載入該精靈作為坐騎
+      let mount = player.party.find(m => m.id === entry.id);
+      if (!mount) {
+        const isSh = Boolean(dexProgress.shiny && dexProgress.shiny[entry.id]);
+        mount = await buildCombatant(entry.id, 15, isSh);
+        mount.name = entry.name || mount.name;
+      }
+      player.mountMon = mount;
+      player.riding = true;
+      RetroAudio.heal();
+      gameState = "OVERWORLD";
+      const spe = mount.baseSpe || 60;
+      const spdLvl = spe >= 110 ? "極速神行" : (spe >= 85 ? "疾風奔馳" : (spe >= 60 ? "穩健小跑" : "悠閒漫步"));
+      dialogQueue = [`已從圖鑑召喚坐騎「${mount.name}」！(速度種族值 ${spe} ｜ ${spdLvl})`];
+      dialogIdx = 0;
+    } catch (e) {
+      gameState = "OVERWORLD";
+    }
+  }
+
+  
+  // 五種無限使用精靈球與全滿傷藥定義
+  const BALL_TYPES = [
+    { id: "pokeball",   name: "精靈球", baseRate: 0.15, color: "#ef4444" },
+    { id: "normalball", name: "普通球", baseRate: 0.25, color: "#3b82f6" },
+    { id: "ultraball",  name: "高級球", baseRate: 0.45, color: "#eab308" },
+    { id: "safariball", name: "狩獵球", baseRate: 0.60, color: "#22c55e" },
+    { id: "masterball", name: "大師球", baseRate: 1.00, color: "#a855f7" }
+  ];
+
+  const battle = {
+    weather: "CLEAR",
+    shinyFlashTimer: 0,
+    enemy: null,
+    menuMode: "MAIN",
+    cursor: 0,
+    msgQueue: [],
+    onMsgDone: null,
+    ballAnim: { active: false, timer: 0, shakes: 0, caught: false, ballColor: "#ef4444", ballName: "精靈球", fleeChance: 0.15 },
+    playerShake: 0,
+    enemyShake: 0,
+    lastShakeIdx: -1
+  };
+
+  async function assignStarter(targetId = null) {
+    const prevState = gameState;
+    gameState = "LOADING";
+    const id = targetId || (Math.floor(Math.random() * MAX_DEX_ID) + 1);
+    loadingText = `正在載入高畫質 #${String(id).padStart(4, "0")} 官方立繪與數值...`;
+
+    try {
+      const starter = await buildCombatant(id, 10);
+      player.party = [starter];
+      player.activeIdx = 0;
+      recordDex(starter.id, starter.name, true);
+      gameState = "OVERWORLD";
+      dialogQueue = [
+        `獲得了初始夥伴 #${String(starter.id).padStart(4, "0")}「${starter.name}」！`,
+        `屬性：${starter.types.map(t => TYPE_ZH[t] || t).join(" / ")} ｜ 走進深綠草叢遇敵吧！`
+      ];
+      dialogIdx = 0;
+    } catch (err) {
+      loadingText = "API 連線逾時，請再試一次！";
+      setTimeout(() => { gameState = prevState === "LOADING" ? "OVERWORLD" : prevState; }, 1200);
+    }
+  }
+
+  document.getElementById("btn-reroll").addEventListener("click", async () => {
+    if (player.party && player.party.length > 0) {
+      dialogQueue = ["你已經擁有寶可夢夥伴了，無法重複領取初始夥伴！"];
+      dialogIdx = 0;
+      return;
+    }
+    await assignStarter(null);
+    await persistSaveToBackend();
+  });
+  document.getElementById("btn-set-starter").addEventListener("click", async () => {
+    if (player.party && player.party.length > 0) {
+      dialogQueue = ["你已經擁有寶可夢夥伴了，無法重複領取初始夥伴！"];
+      dialogIdx = 0;
+      return;
+    }
+    const val = parseInt(document.getElementById("input-dex-id").value, 10);
+    if (val >= 1 && val <= MAX_DEX_ID) {
+      await assignStarter(val);
+      await persistSaveToBackend();
+    }
+  });
+
+  async function triggerWildEncounter(isFishing = false) {
+    if (gameState === "LOADING" || gameState === "BATTLE") return;
+    gameState = "LOADING";
+
+    if (!player.party || player.party.length === 0) {
+      const ok = await hydratePartyFromCaughtDex();
+      if (!ok) {
+        const tempMon = await buildCombatant(25, 10, false);
+        player.party = [tempMon];
+        player.activeIdx = 0;
+      }
+    }
+
+    const wildId = Math.floor(Math.random() * MAX_DEX_ID) + 1;
+    const isCached = Boolean(pokemonCache[wildId]);
+    loadingText = isCached
+      ? `野生精靈出現中... (#${String(wildId).padStart(4, "0")} 快取秒開)`
+      : `野生精靈出現中... 正在載入 #${String(wildId).padStart(4, "0")}...`;
+
+    try {
+      const pMon = player.party[player.activeIdx] || player.party[0];
+      const baseLvl = pMon ? pMon.level : 8;
+      const wildLvl = Math.max(5, baseLvl + Math.floor(Math.random() * 5) - 2);
+      const isShiny = Math.random() < 0.50;
+      const enemy = await buildCombatant(wildId, wildLvl, isShiny);
+      recordDex(enemy.id, enemy.name, false, isShiny);
+      persistSaveToBackend();
+
+      battle.enemy = enemy;
+      battle.cursor = 0;
+      battle.ballAnim.active = false;
+      battle.shinyFlashTimer = isShiny ? 55 : 0;
+      gameState = "BATTLE";
+
+      if (isShiny) {
+        RetroAudio.shiny();
+        pushBattleMessages(
+          [`✨ 閃光奇蹟！異色的 #${String(enemy.id).padStart(4, "0")}「${enemy.name}」(Lv.${wildLvl}) 出現了！`],
+          () => { battle.menuMode = "MAIN"; battle.cursor = 0; }
+        );
+      } else {
+        RetroAudio.encounter();
+        pushBattleMessages(
+          [`野生的 #${String(enemy.id).padStart(4, "0")}「${enemy.name}」(Lv.${wildLvl}) 出現了！`],
+          () => { battle.menuMode = "MAIN"; battle.cursor = 0; }
+        );
+      }
+    } catch (err) {
+      console.error("遇敵載入異常:", err);
+      gameState = "OVERWORLD";
+    }
+  }
+
+  function pushBattleMessages(msgs, cb = null) {
+    battle.msgQueue = [...msgs];
+    battle.onMsgDone = cb;
+    battle.menuMode = "MESSAGE";
+  }
+
+  function executeBattleTurn(playerMove) {
+    const pMon = player.party[player.activeIdx];
+    const eMon = battle.enemy;
+    const eMove = eMon.moves[Math.floor(Math.random() * eMon.moves.length)];
+    const msgs = [];
+
+    const order = pMon.spe >= eMon.spe
+      ? [{ side: "PLAYER", mon: pMon, target: eMon, move: playerMove }, { side: "ENEMY", mon: eMon, target: pMon, move: eMove }]
+      : [{ side: "ENEMY", mon: eMon, target: pMon, move: eMove }, { side: "PLAYER", mon: pMon, target: eMon, move: playerMove }];
+
+    for (const act of order) {
+      if (act.mon.hp <= 0 || act.target.hp <= 0) continue;
+      const eff = calcTypeMultiplier(act.move.type, act.target.types);
+      const stab = act.mon.types.includes(act.move.type) ? 1.3 : 1.0;
+      const raw = (((2 * act.mon.level / 5 + 2) * act.move.power * (act.mon.atk / act.target.def)) / 22 + 2) * stab * eff;
+      const dmg = eff === 0 ? 0 : Math.max(2, Math.floor(raw));
+
+      act.target.hp = Math.max(0, act.target.hp - dmg);
+      RetroAudio.hit(); if (act.side === "PLAYER") battle.enemyShake = 14; else battle.playerShake = 14;
+
+      const effStr = eff === 0 ? "完全沒有效果..." : (eff >= 2 ? "效果絕佳！" : (eff < 1 ? "效果不太好..." : ""));
+      msgs.push(`${act.side === "ENEMY" ? "野生" : ""}${act.mon.name} 使出「${act.move.name}」，造成 ${dmg} 點傷害！${effStr}`);
+
+      if (act.target.hp <= 0) {
+        if (act.side === "PLAYER") {
+          const expGain = eMon.level * 15;
+          pMon.exp += expGain;
+          msgs.push(`野生的 ${eMon.name} 倒下了！獲得 ${expGain} 點經驗值！`);
+          if (pMon.exp >= pMon.nextExp) {
+            pMon.exp -= pMon.nextExp;
+            pMon.level += 1;
+            pMon.nextExp = pMon.level * 30;
+            pMon.maxHp += 6;
+            pMon.hp = pMon.maxHp;
+            pMon.atk += 2;
+            pMon.def += 2;
+            pMon.spe += 2;
+            msgs.push(`升級了！${pMon.name} 升到了 Lv.${pMon.level}！`);
+          }
+          pushBattleMessages(msgs, () => { gameState = "OVERWORLD"; persistSaveToBackend(); });
+          return;
+        } else {
+          msgs.push(`${pMon.name} 失去戰鬥能力！`);
+          const nextAlive = player.party.findIndex(m => m.hp > 0);
+          if (nextAlive === -1) {
+            msgs.push("全隊體力耗盡，已送回寶可夢中心恢復！");
+            pushBattleMessages(msgs, () => {
+              player.party.forEach(m => m.hp = m.maxHp);
+              player.activeIdx = 0;
+              player.gx = 3; player.gy = 4;
+              player.px = 3 * TILE; player.py = 4 * TILE;
+              gameState = "OVERWORLD";
+            });
+          } else {
+            player.activeIdx = nextAlive;
+            msgs.push(`派出「${player.party[nextAlive].name}」接替戰鬥！`);
+            pushBattleMessages(msgs, () => { battle.menuMode = "MAIN"; battle.cursor = 0; });
+          }
+          return;
+        }
+      }
+    }
+
+    pushBattleMessages(msgs, () => { battle.menuMode = "MAIN"; battle.cursor = 0; });
+  }
+
+  function throwPokeball(ballIndex = 0) {
+    const ball = BALL_TYPES[ballIndex] || BALL_TYPES[0];
+    const eMon = battle.enemy;
+    const bst = eMon.bst || (eMon.baseHp + eMon.baseAtk + eMon.baseDef + eMon.baseSpe * 1.5);
+
+    // 稀有度係數 (種族值總和越高越稀有，捕捉難度增加、掙脫後逃跑率提高)
+    const rarityFactor = bst >= 580 ? 0.52 : (bst >= 500 ? 0.72 : (bst >= 420 ? 0.88 : 1.0));
+    const fleeChance = bst >= 580 ? 0.45 : (bst >= 500 ? 0.30 : (bst >= 420 ? 0.18 : 0.10));
+
+    // 血量越低捕捉率越高 (殘血最高獲得 2.2 倍加成)
+    const hpRatio = Math.max(0.01, eMon.hp / eMon.maxHp);
+    const lowHpMultiplier = 1.0 + (1.0 - hpRatio) * 1.2;
+
+    let finalCatchRate = ball.baseRate * lowHpMultiplier * rarityFactor;
+    if (ball.id === "masterball") finalCatchRate = 1.0;
+    else finalCatchRate = Math.min(0.95, Math.max(0.04, finalCatchRate));
+
+    const caught = Math.random() < finalCatchRate;
+
+    RetroAudio.ballThrow();
+    battle.lastShakeIdx = -1;
+    battle.ballAnim = {
+      active: true,
+      timer: 0,
+      shakes: caught ? 3 : Math.floor(Math.random() * 2) + 1,
+      caught,
+      ballColor: ball.color,
+      ballName: ball.name,
+      fleeChance
+    };
+    battle.menuMode = "BALL_ANIM";
+  }
+
+  // ==========================================
+  // 5. 高清晰繪圖輔助
+  // ==========================================
+  function drawTileMatrix(matrix, dx, dy, flipX = false) {
+    for (let r = 0; r < 16; r++) {
+      const rowStr = matrix[r];
+      for (let c = 0; c < 16; c++) {
+        const sc = flipX ? (15 - c) : c;
+        const color = PAL[rowStr[sc]];
+        if (!color) continue;
+        ctx.fillStyle = color;
+        ctx.fillRect(
+          Math.floor(dx + c * PIXEL_SCALE),
+          Math.floor(dy + r * PIXEL_SCALE),
+          PIXEL_SCALE,
+          PIXEL_SCALE
+        );
+      }
+    }
+  }
+
+  // 繪製高解析官方立繪 (我方在左下角水平翻轉面向敵人)
+  function drawHighResPokemon(mon, isPlayerSide, x, y, size = 165) {
+    const img = mon.frontImg;
+    if (!img) {
+      ctx.fillStyle = "#283038";
+      ctx.beginPath();
+      ctx.arc(x + size / 2, y + size / 2, size / 3, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    if (isPlayerSide) {
+      ctx.translate(x + size, y);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0, size, size);
+    } else {
+      ctx.drawImage(img, x, y, size, size);
+    }
+    ctx.restore();
+  }
+
+  // ==========================================
+  // 6. 鍵盤輸入控制
+  // ==========================================
+  function prefetchVisibleDexSprites() {
+    const slice = dexEntries.slice(dexScrollOffset, dexScrollOffset + 15);
+    slice.forEach(entry => {
+      if (entry.imgUrl) {
+        loadSpriteImage(entry.imgUrl);
+      } else {
+        fetchPokemonData(entry.id).then(data => {
+          const isSh = Boolean(dexProgress.shiny && dexProgress.shiny[entry.id]);
+          entry.imgUrl = isSh ? (data.shinyUrl || data.frontUrl) : (data.frontUrl || data.pixelFrontUrl);
+          if (entry.imgUrl) loadSpriteImage(entry.imgUrl);
+        }).catch(() => {});
+      }
+    });
+  }
+
+  function openPokedexScreen() {
+    const allIds = new Set([
+      ...Object.keys(dexProgress.seen).map(Number),
+      ...Object.keys(dexProgress.caught).map(Number)
+    ]);
+    dexEntries = Array.from(allIds).sort((a, b) => a - b).map(id => {
+      const cached = pokemonCache[id];
+      const isSh = Boolean(dexProgress.shiny && dexProgress.shiny[id]);
+      const imgUrl = cached
+        ? (isSh ? (cached.shinyUrl || cached.frontUrl) : (cached.frontUrl || cached.pixelFrontUrl))
+        : null;
+      return {
+        id,
+        name: dexProgress.caught[id] || dexProgress.seen[id] || `#${id}`,
+        caught: Boolean(dexProgress.caught[id]),
+        shiny: isSh,
+        imgUrl
+      };
+    });
+    dexScrollOffset = 0;
+    dexCursor = 0;
+    prefetchVisibleDexSprites();
+    gameState = "POKEDEX";
+  }
+
+  window.addEventListener("keydown", (e) => { if (e.code === "KeyM") { RetroAudio.toggleMute(); return; } if (["KeyZ", "Enter", "KeyX"].includes(e.code)) RetroAudio.blip();
+    keys[e.code] = true;
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+      e.preventDefault();
+    }
+
+    if (gameState === "LOADING") return;
+
+    if (e.code === "Enter" && gameState === "OVERWORLD") {
+      openPokedexScreen();
+      return;
+    }
+    if (gameState === "POKEDEX") {
+      const COLS_DEX = 5;
+      const PAGE_SIZE = 15;
+      if (e.code === "Enter" || e.code === "KeyX" || e.code === "Escape") {
+        gameState = "OVERWORLD";
+        return;
+      }
+      if (dexEntries.length === 0) return;
+
+      if (e.code === "ArrowRight") {
+        if (dexCursor + 1 < dexEntries.length) dexCursor++;
+      } else if (e.code === "ArrowLeft") {
+        if (dexCursor - 1 >= 0) dexCursor--;
+      } else if (e.code === "ArrowDown") {
+        if (dexCursor + COLS_DEX < dexEntries.length) dexCursor += COLS_DEX;
+        else dexCursor = dexEntries.length - 1;
+      } else if (e.code === "ArrowUp") {
+        if (dexCursor - COLS_DEX >= 0) dexCursor -= COLS_DEX;
+        else dexCursor = 0;
+      } else if (e.code === "KeyZ") {
+        selectMountFromPokedex(dexEntries[dexCursor]);
+        return;
+      }
+
+      // 自動跟隨游標翻頁（每次以 5 隻一列為單位捲動）
+      while (dexCursor < dexScrollOffset) {
+        dexScrollOffset = Math.max(0, dexScrollOffset - COLS_DEX);
+      }
+      while (dexCursor >= dexScrollOffset + PAGE_SIZE) {
+        dexScrollOffset += COLS_DEX;
+      }
+      prefetchVisibleDexSprites();
+      return;
+    }
+
+    if (gameState === "OVERWORLD") {
+      if (e.code === "KeyR") {
+        e.preventDefault();
+        const lead = player.mountMon || player.party[player.activeIdx];
+        if (lead) {
+          player.riding = !player.riding;
+          RetroAudio.blip();
+          const spe = lead.baseSpe || 60;
+          const spdLvl = spe >= 110 ? "極速神行" : (spe >= 85 ? "疾風奔馳" : (spe >= 60 ? "穩健小跑" : "悠閒漫步"));
+          dialogQueue = player.riding
+            ? [`跨上了「${lead.name}」！(速度種族值 ${spe} ｜ ${spdLvl}) [再按 R 下馬]`]
+            : [`從「${lead.name}」背上下來了，恢復步行模式。`];
+          dialogIdx = 0;
+        }
+        return;
+      }
+      if (e.code === "KeyZ") {
+        if (dialogQueue.length > 0) {
+          dialogIdx++;
+          if (dialogIdx >= dialogQueue.length) { dialogQueue = []; dialogIdx = 0; }
+          return;
+        }
+        if (player.moving) return;
+        let tx = player.gx, ty = player.gy;
+        if (player.dir === "up") ty--;
+        if (player.dir === "down") ty++;
+        if (player.dir === "left") tx--;
+        if (player.dir === "right") tx++;
+        const tile = (MAP[ty] && MAP[ty][tx] !== undefined) ? MAP[ty][tx] : -1;
+
+        if (tile === 6) { RetroAudio.heal(); persistSaveToBackend();
+          player.party.forEach(m => m.hp = m.maxHp);
+          player.bag.pokeball = Math.max(player.bag.pokeball, 10);
+          player.bag.potion = Math.max(player.bag.potion, 5);
+          dialogQueue = ["【寶可夢中心】所有夥伴已恢復滿血，", "精靈球與傷藥也已免費補滿！"];
+          dialogIdx = 0;
+        } else if (tile === 8 || tile === 9) {
+          const seenCount = Object.keys(dexProgress.seen).length;
+          const caughtCount = Object.keys(dexProgress.caught).length;
+          dialogQueue = [
+            `小田卷博士：目前全國圖鑑進度`,
+            `已遇見 ${seenCount} 種 ｜ 已收服 ${caughtCount} 種 (總計 1025 種)！`,
+            "隨時按 Enter 鍵可打開全國圖鑑清單。"
+          ];
+          dialogIdx = 0;
+        }
+      }
+      if (e.code === "KeyX" && dialogQueue.length > 0) {
+        dialogQueue = []; dialogIdx = 0;
+      }
+      return;
+    }
+
+    if (gameState === "BATTLE") {
+      if (battle.menuMode === "MESSAGE") {
+        if (e.code === "KeyZ" || e.code === "Enter") {
+          battle.msgQueue.shift();
+          if (battle.msgQueue.length === 0 && battle.onMsgDone) {
+            const cb = battle.onMsgDone;
+            battle.onMsgDone = null;
+            cb();
+          }
+        }
+        return;
+      }
+
+      if (battle.menuMode === "MAIN") {
+        if (e.code === "ArrowLeft" || e.code === "ArrowRight") battle.cursor ^= 1;
+        if (e.code === "ArrowUp" || e.code === "ArrowDown") battle.cursor ^= 2;
+        if (e.code === "KeyZ" || e.code === "Enter") {
+          if (battle.cursor === 0) { battle.menuMode = "MOVES"; battle.cursor = 0; }
+          if (battle.cursor === 1) { battle.menuMode = "BAG"; battle.cursor = 0; }
+          if (battle.cursor === 2) { battle.menuMode = "PARTY"; battle.cursor = 0; }
+          if (battle.cursor === 3) {
+            pushBattleMessages(["成功脫離戰鬥！"], () => { gameState = "OVERWORLD"; });
+          }
+        }
+        return;
+      }
+
+      if (battle.menuMode === "MOVES") {
+        const moves = player.party[player.activeIdx].moves;
+        if (e.code === "ArrowUp") battle.cursor = (battle.cursor + moves.length - 1) % moves.length;
+        if (e.code === "ArrowDown") battle.cursor = (battle.cursor + 1) % moves.length;
+        if (e.code === "KeyX") { battle.menuMode = "MAIN"; battle.cursor = 0; }
+        if (e.code === "KeyZ" || e.code === "Enter") {
+          executeBattleTurn(moves[battle.cursor]);
+        }
+        return;
+      }
+
+      if (battle.menuMode === "BAG") {
+        // 6 個無限道具: 0~4 為五種精靈球, 5 為無限全滿傷藥 (2欄3列排列)
+        if (e.code === "ArrowLeft" || e.code === "ArrowRight") battle.cursor ^= 1;
+        if (e.code === "ArrowUp") battle.cursor = (battle.cursor + 4) % 6;
+        if (e.code === "ArrowDown") battle.cursor = (battle.cursor + 2) % 6;
+        if (e.code === "KeyX") { battle.menuMode = "MAIN"; battle.cursor = 1; }
+        if (e.code === "KeyZ" || e.code === "Enter") {
+          if (battle.cursor < 5) {
+            throwPokeball(battle.cursor);
+          } else {
+            const pMon = player.party[player.activeIdx];
+            pMon.hp = pMon.maxHp;
+            RetroAudio.heal();
+            pushBattleMessages([`使用了無限傷藥！${pMon.name} 體力完全恢復至 ${pMon.maxHp}！`], () => {
+              battle.menuMode = "MAIN"; battle.cursor = 0;
+            });
+          }
+        }
+        return;
+      }
+
+      if (battle.menuMode === "PARTY") {
+        if (e.code === "ArrowUp") battle.cursor = (battle.cursor + player.party.length - 1) % player.party.length;
+        if (e.code === "ArrowDown") battle.cursor = (battle.cursor + 1) % player.party.length;
+        if (e.code === "KeyX") { battle.menuMode = "MAIN"; battle.cursor = 2; }
+        if (e.code === "KeyZ" || e.code === "Enter") {
+          const target = player.party[battle.cursor];
+          if (battle.cursor === player.activeIdx || target.hp <= 0) return;
+          player.activeIdx = battle.cursor;
+          pushBattleMessages([`去吧！${target.name}！`], () => { battle.menuMode = "MAIN"; battle.cursor = 0; });
+        }
+      }
+    }
+  });
+
+  window.addEventListener("keyup", (e) => { keys[e.code] = false; });
+
+  // ==========================================
+  // 7. 主遊戲迴圈 (高解析 720x480 邏輯座標渲染)
+  // ==========================================
+  function update() {
+    frameCount++;
+    if (battle.playerShake > 0) battle.playerShake--;
+    if (battle.enemyShake > 0) battle.enemyShake--;
+    if (battle.shinyFlashTimer > 0) battle.shinyFlashTimer--;
+
+    if (gameState === "OVERWORLD") {
+      player.running = Boolean(keys["ShiftLeft"] || keys["ShiftRight"]);
+      if (dialogQueue.length > 0) return;
+
+      if (player.moving) {
+        const tx = player.gx * TILE;
+        const ty = player.gy * TILE;
+        const leadMon = player.mountMon || player.party[player.activeIdx];
+        const rideSpe = leadMon ? (leadMon.baseSpe || 60) : 60;
+        const rideSpd = Math.max(6, Math.min(24, Math.round(rideSpe / 6.5)));
+        const spd = player.riding ? rideSpd : (player.running ? 12 : 6);
+        if (player.px < tx) player.px = Math.min(tx, player.px + spd);
+        if (player.px > tx) player.px = Math.max(tx, player.px - spd);
+        if (player.py < ty) player.py = Math.min(ty, player.py + spd);
+        if (player.py > ty) player.py = Math.max(ty, player.py - spd);
+        player.stepFrame++;
+
+        if (player.px === tx && player.py === ty) {
+          player.moving = false;
+          if (MAP[player.gy][player.gx] === 2 && Math.random() < 0.40) {
+            triggerWildEncounter();
+          }
+        }
+        return;
+      }
+
+      let nx = player.gx, ny = player.gy, moved = false;
+      if (keys["ArrowUp"])         { player.dir = "up"; ny--; moved = true; }
+      else if (keys["ArrowDown"])  { player.dir = "down"; ny++; moved = true; }
+      else if (keys["ArrowLeft"])  { player.dir = "left"; nx--; moved = true; }
+      else if (keys["ArrowRight"]) { player.dir = "right"; nx++; moved = true; }
+      if (moved && dialogQueue.length > 0) { dialogQueue = []; dialogIdx = 0; }
+
+      if (moved && nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+        const t = MAP[ny][nx];
+        if (t === 0 || t === 2 || t === 3) {
+          player.gx = nx;
+          player.gy = ny;
+          player.moving = true;
+        }
+      }
+    }
+
+    if (gameState === "BATTLE" && battle.menuMode === "BALL_ANIM") {
+      battle.ballAnim.timer++;
+      const t = battle.ballAnim.timer;
+      if (t === 28 || t === 52 || t === 76) {
+        const shakeIdx = (t - 28) / 24;
+        if (shakeIdx < battle.ballAnim.shakes && battle.lastShakeIdx !== shakeIdx) {
+          battle.lastShakeIdx = shakeIdx;
+          RetroAudio.ballShake();
+        }
+      }
+      if (t >= 105) {
+        battle.ballAnim.active = false;
+        battle.menuMode = "MESSAGE";
+        const bName = battle.ballAnim.ballName || "精靈球";
+        if (battle.ballAnim.caught) {
+          RetroAudio.caught();
+          const eMon = battle.enemy;
+          recordDex(eMon.id, eMon.name, true, Boolean(eMon.isShiny));
+          const msgs = [`太棒了！用${bName}成功收服了 #${String(eMon.id).padStart(4, "0")}「${eMon.name}」！`];
+          if (player.party.length < 999) {
+            eMon.hp = eMon.maxHp;
+            player.party.push(eMon);
+            msgs.push(`${eMon.name} 已加入隨行隊伍並寫入存檔！`);
+          }
+          persistSaveToBackend();
+          pushBattleMessages(msgs, () => { gameState = "OVERWORLD"; });
+        } else {
+          const fleeProb = battle.ballAnim.fleeChance || 0.15;
+          if (Math.random() < fleeProb) {
+            pushBattleMessages([`警戒心太強了！${battle.enemy.name} 掙脫${bName}並趁機逃走了！`], () => {
+              gameState = "OVERWORLD";
+            });
+          } else {
+            pushBattleMessages([`差一點！${battle.enemy.name} 掙脫了${bName}！`], () => {
+              battle.menuMode = "MAIN";
+              battle.cursor = 0;
+            });
+          }
+        }
+      }
+      return;
+    }
+  }
+
+  function renderLoading() {
+    ctx.fillStyle = "#182028";
+    ctx.fillRect(0, 0, 720, 480);
+    ctx.strokeStyle = "#4ade80";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(24, 24, 672, 432);
+
+    const pulse = Math.sin(frameCount * 0.15) * 6;
+    ctx.fillStyle = "#f04838";
+    ctx.beginPath(); ctx.arc(360, 200, 32 + pulse * 0.4, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.arc(360, 200, 32 + pulse * 0.4, 0, Math.PI); ctx.fill();
+    ctx.fillStyle = "#182028";
+    ctx.fillRect(326, 197, 68, 6);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(354, 194, 12, 12);
+
+    ctx.fillStyle = "#f8f8f8";
+    ctx.font = `bold 20px ${FONT_FAMILY}`;
+    ctx.textAlign = "center";
+    ctx.fillText(loadingText, 360, 290);
+    ctx.textAlign = "left";
+  }
+
+  function renderOverworld() {
+    ctx.fillStyle = PAL["g"];
+    ctx.fillRect(0, 0, 720, 480);
+
+    const camX = Math.max(0, Math.min((COLS - VIEW_COLS) * TILE, player.px - 336));
+    const camY = Math.max(0, Math.min((ROWS - VIEW_ROWS) * TILE, player.py - 216));
+    const waterAnim = Math.floor(frameCount / 30) % 2 === 0 ? TILES.waterA : TILES.waterB;
+
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const sx = c * TILE - camX;
+        const sy = r * TILE - camY;
+        if (sx < -TILE || sx > 720 || sy < -TILE || sy > 480) continue;
+
+        const t = MAP[r][c];
+        if (t === 3) drawTileMatrix(TILES.sand, sx, sy);
+        else if (t === 4) drawTileMatrix(waterAnim, sx, sy);
+        else drawTileMatrix(TILES.grass, sx, sy);
+
+        if (t === 1) drawTileMatrix(TILES.tree, sx, sy);
+        if (t === 2) drawTileMatrix(TILES.tallGrass, sx, sy);
+        if (t === 5) drawTileMatrix(TILES.centerWall, sx, sy);
+        if (t === 6) drawTileMatrix(TILES.centerDoor, sx, sy);
+        if (t === 7) drawTileMatrix(TILES.labWall, sx, sy);
+        if (t === 8) drawTileMatrix(TILES.labDoor, sx, sy);
+        if (t === 9) drawTileMatrix(TILES.profNpc, sx, sy);
+      }
+    }
+
+    const animRate = player.running ? 2 : 4;
+    const bob = player.moving && (Math.floor(player.stepFrame / animRate) % 2 === 1) ? -3 : 0;
+    const pxScreen = player.px - camX;
+    const pyScreen = player.py - camY;
+    const activeLead = player.mountMon || player.party[player.activeIdx];
+    if (player.riding && activeLead) {
+      // 1. 地面藍色加速光環
+      ctx.fillStyle = "rgba(56, 189, 248, 0.42)";
+      ctx.beginPath();
+      ctx.ellipse(pxScreen + 24, pyScreen + 42, 24, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. 坐騎寶可夢立繪（若圖片載入完成則畫立繪，否則畫能量坐騎底座）
+      if (activeLead.frontImg && activeLead.frontImg.complete && activeLead.frontImg.naturalWidth > 0) {
+        ctx.save();
+        if (player.dir === "right") {
+          ctx.translate(pxScreen + 52, pyScreen - 2 + bob);
+          ctx.scale(-1, 1);
+          ctx.drawImage(activeLead.frontImg, 0, 0, 54, 54);
+        } else {
+          ctx.drawImage(activeLead.frontImg, pxScreen - 3, pyScreen - 2 + bob, 54, 54);
+        }
+        ctx.restore();
+      } else {
+        ctx.fillStyle = "#38bdf8";
+        ctx.beginPath();
+        ctx.arc(pxScreen + 24, pyScreen + 30 + bob, 16, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 3. 訓練家本人穩固坐在騎寵背上（確保永遠不會消失）
+      drawTileMatrix(TILES.player, pxScreen, pyScreen - 16 + bob, player.dir === "right");
+    } else {
+      drawTileMatrix(TILES.player, pxScreen, pyScreen + bob, player.dir === "right");
+    }
+
+    // 左上角高清晰夥伴狀態列
+    const lead = player.party[player.activeIdx];
+    if (lead) {
+      ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+      ctx.fillRect(14, 14, 340, 38);
+      ctx.strokeStyle = "#f8f8f8";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(14, 14, 340, 38);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `bold 16px ${FONT_FAMILY}`;
+      ctx.fillText(`#${String(lead.id).padStart(4, "0")} ${lead.name}  Lv.${lead.level}  HP: ${lead.hp}/${lead.maxHp}`, 26, 39);
+    }
+
+    // 右上角圖鑑進度
+    const caughtNum = Object.keys(dexProgress.caught).length;
+    ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+    ctx.fillRect(516, 14, 190, 38);
+    ctx.strokeStyle = "#facc15";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(516, 14, 190, 38);
+    ctx.fillStyle = "#facc15";
+    ctx.font = `bold 16px ${FONT_FAMILY}`;
+    ctx.fillText(`${boundTrainerId ? "👤" + boundTrainerId : "👤訪客"} 圖鑑:${caughtNum}`, 522, 39);
+
+    // 底部高清晰對話視窗
+    if (dialogQueue.length > 0) {
+      const bx = 24, by = 342, bw = 672, bh = 116;
+      ctx.fillStyle = "#2048a8"; ctx.fillRect(bx, by, bw, bh);
+      ctx.fillStyle = "#f8f8f8"; ctx.fillRect(bx + 5, by + 5, bw - 10, bh - 10);
+      ctx.fillStyle = "#182028"; ctx.font = `bold 20px ${FONT_FAMILY}`;
+      ctx.fillText(dialogQueue[dialogIdx] || "", bx + 26, by + 52);
+      if (Math.floor(frameCount / 18) % 2 === 0) {
+        ctx.fillStyle = "#f04838"; ctx.fillText("▼", bx + bw - 42, by + bh - 22);
+      }
+    }
+  }
+
+  function drawHpBar(x, y, w, current, max) {
+    const ratio = Math.max(0, Math.min(1, current / max));
+    ctx.fillStyle = "#283038"; ctx.fillRect(x, y, w, 10);
+    ctx.fillStyle = ratio > 0.5 ? "#48d868" : (ratio > 0.2 ? "#f8d030" : "#f04838");
+    ctx.fillRect(x, y, Math.floor(w * ratio), 10);
+  }
+
+  function renderBattle() {
+    const pMon = player.party[player.activeIdx] || player.party[0]; const eMon = battle.enemy; if (!pMon || !eMon) return;
+    // 戰鬥背景與斜角草地站台
+    ctx.fillStyle = "#c8f4e0"; ctx.fillRect(0, 0, 720, 342);
+    ctx.fillStyle = "#88d870"; ctx.fillRect(0, 228, 720, 114);
+
+    ctx.fillStyle = "#50b848";
+    ctx.beginPath(); ctx.ellipse(546, 174, 132, 32, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#288838"; ctx.lineWidth = 3; ctx.stroke();
+
+    ctx.fillStyle = "#50b848";
+    ctx.beginPath(); ctx.ellipse(162, 322, 144, 38, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#288838"; ctx.lineWidth = 3; ctx.stroke();
+
+    // 繪製敵方高畫質精靈或精靈球動畫
+    if (battle.ballAnim.active) {
+      const t = battle.ballAnim.timer;
+      let bx = 546, by = 126, angle = 0;
+      if (t < 28) {
+        const p = t / 28;
+        bx = 180 + p * 366;
+        by = 255 - Math.sin(p * Math.PI) * 156 - p * 120;
+      } else {
+        const sp = t - 28;
+        const shakeIdx = Math.floor(sp / 24);
+        if (shakeIdx < battle.ballAnim.shakes && shakeIdx !== battle.lastShakeIdx) { battle.lastShakeIdx = shakeIdx; RetroAudio.ballShake(); }
+        if (sp < battle.ballAnim.shakes * 24) angle = Math.sin(sp * 0.55) * 8;
+      }
+      ctx.fillStyle = "#182028"; ctx.beginPath(); ctx.arc(bx + angle, by, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = battle.ballAnim.ballColor || "#f04838"; ctx.beginPath(); ctx.arc(bx + angle, by, 11, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(bx + angle, by, 11, 0, Math.PI); ctx.fill();
+      ctx.fillStyle = "#182028"; ctx.fillRect(bx - 12 + angle, by - 1, 24, 3);
+    } else if (eMon.hp > 0) {
+      const exOff = battle.enemyShake > 0 ? (battle.enemyShake % 2 === 0 ? -8 : 8) : 0;
+      drawHighResPokemon(eMon, false, 462 + exOff, 22, 168);
+    }
+
+    // 繪製我方高畫質精靈 (水平翻轉面向敵方)
+    if (pMon.hp > 0) {
+      const pxOff = battle.playerShake > 0 ? (battle.playerShake % 2 === 0 ? -8 : 8) : 0;
+      drawHighResPokemon(pMon, true, 76 + pxOff, 164, 174);
+    }
+
+        if (battle.shinyFlashTimer > 0) {
+      ctx.fillStyle = "rgba(255, 230, 100, 0.28)";
+      ctx.fillRect(0, 0, 720, 342);
+      for (let i = 0; i < 8; i++) {
+        const ang = (i / 8) * Math.PI * 2 + battle.shinyFlashTimer * 0.12;
+        const rad = (55 - battle.shinyFlashTimer) * 1.6;
+        const sx = 546 + Math.cos(ang) * rad;
+        const sy = 105 + Math.sin(ang) * rad;
+        ctx.fillStyle = i % 2 === 0 ? "#fde047" : "#ffffff";
+        ctx.fillRect(sx - 4, sy - 4, 8, 8);
+      }
+    }
+
+    // 敵方高清晰資訊框
+    ctx.fillStyle = "#f8f8e8"; ctx.fillRect(20, 20, 310, 82);
+    ctx.strokeStyle = "#283038"; ctx.lineWidth = 3; ctx.strokeRect(20, 20, 310, 82);
+    ctx.fillStyle = "#182028"; ctx.font = `bold 18px ${FONT_FAMILY}`;
+    ctx.fillText(`#${String(eMon.id).padStart(4, "0")} ${eMon.name}${eMon.isShiny ? " ✨" : ""}`, 34, 48);
+    ctx.font = `bold 16px ${FONT_FAMILY}`; ctx.fillText(`Lv.${eMon.level}`, 258, 48);
+    drawHpBar(72, 66, 236, eMon.hp, eMon.maxHp);
+    ctx.font = `bold 14px ${FONT_FAMILY}`; ctx.fillText("HP", 34, 76);
+
+    // 我方高清晰資訊框
+    ctx.fillStyle = "#f8f8e8"; ctx.fillRect(380, 216, 320, 108);
+    ctx.strokeStyle = "#283038"; ctx.lineWidth = 3; ctx.strokeRect(380, 216, 320, 108);
+    ctx.fillStyle = "#182028"; ctx.font = `bold 18px ${FONT_FAMILY}`;
+    ctx.fillText(`${pMon.name}  Lv.${pMon.level}`, 396, 244);
+    drawHpBar(446, 260, 234, pMon.hp, pMon.maxHp);
+    ctx.font = `bold 14px ${FONT_FAMILY}`; ctx.fillText("HP", 396, 270);
+    ctx.font = `bold 15px ${FONT_FAMILY}`; ctx.fillText(`${pMon.hp} / ${pMon.maxHp}`, 580, 290);
+    const expRatio = Math.min(1, pMon.exp / pMon.nextExp);
+    ctx.fillStyle = "#283038"; ctx.fillRect(446, 300, 234, 8);
+    ctx.fillStyle = "#3898f8"; ctx.fillRect(446, 300, Math.floor(234 * expRatio), 8);
+    ctx.font = `bold 11px ${FONT_FAMILY}`; ctx.fillText(`EXP ${pMon.exp}/${pMon.nextExp}`, 396, 308);
+
+    // 底部高清晰指令框
+    ctx.fillStyle = "#283858"; ctx.fillRect(0, 342, 720, 138);
+    ctx.fillStyle = "#f8f8f8"; ctx.fillRect(8, 350, 704, 122);
+
+    if (battle.menuMode === "MESSAGE" || battle.menuMode === "BALL_ANIM") {
+      ctx.fillStyle = "#182028"; ctx.font = `bold 20px ${FONT_FAMILY}`;
+      const line = battle.menuMode === "BALL_ANIM" ? "精靈球搖晃中..." : (battle.msgQueue[0] || "");
+      ctx.fillText(line, 28, 412);
+      if (battle.menuMode === "MESSAGE" && Math.floor(frameCount / 16) % 2 === 0) {
+        ctx.fillStyle = "#f04838"; ctx.fillText("▼", 674, 452);
+      }
+      return;
+    }
+
+    if (battle.menuMode === "MAIN") {
+      ctx.fillStyle = "#182028"; ctx.font = `bold 20px ${FONT_FAMILY}`;
+      ctx.fillText(`${pMon.name} 要做什麼？`, 28, 405);
+      ctx.strokeStyle = "#283858"; ctx.lineWidth = 3; ctx.strokeRect(380, 352, 330, 118);
+      ["戰鬥", "背包", "隊伍", "逃跑"].forEach((label, i) => {
+        const ox = 420 + (i % 2) * 152;
+        const oy = 398 + Math.floor(i / 2) * 46;
+        ctx.fillStyle = "#182028"; ctx.fillText(label, ox, oy);
+        if (battle.cursor === i) { ctx.fillStyle = "#f04838"; ctx.fillText("▶", ox - 26, oy); }
+      });
+      return;
+    }
+
+    if (battle.menuMode === "MOVES") {
+      pMon.moves.forEach((m, i) => {
+        const my = 382 + i * 26;
+        ctx.fillStyle = "#182028"; ctx.font = `bold 17px ${FONT_FAMILY}`;
+        ctx.fillText(m.name, 46, my);
+        if (battle.cursor === i) { ctx.fillStyle = "#f04838"; ctx.fillText("▶", 22, my); }
+      });
+      const sel = (pMon.moves && pMon.moves[battle.cursor]) || { type: 'normal', power: 40 };
+      ctx.strokeStyle = "#283858"; ctx.lineWidth = 3; ctx.strokeRect(410, 352, 300, 118);
+      ctx.fillStyle = "#3878e8"; ctx.font = `bold 18px ${FONT_FAMILY}`;
+      ctx.fillText(`屬性：${TYPE_ZH[sel.type] || sel.type}`, 432, 398);
+      ctx.fillStyle = "#182028";
+      ctx.fillText(`威力：${sel.power}  (按 X 返回)`, 432, 438);
+      return;
+    }
+
+    if (battle.menuMode === "BAG") {
+      const bagItems = [
+        "精靈球 ∞ (15%)",
+        "普通球 ∞ (25%)",
+        "高級球 ∞ (45%)",
+        "狩獵球 ∞ (60%)",
+        "大師球 ∞ (100%)",
+        "全滿傷藥 ∞ (補滿HP)"
+      ];
+      bagItems.forEach((txt, i) => {
+        const col = i % 2;
+        const row = Math.floor(i / 2);
+        const ix = 44 + col * 335;
+        const iy = 382 + row * 34;
+        ctx.fillStyle = i === 4 ? "#7e22ce" : (i === 5 ? "#15803d" : "#182028");
+        ctx.font = `bold 17px ${FONT_FAMILY}`;
+        ctx.fillText(txt, ix, iy);
+        if (battle.cursor === i) {
+          ctx.fillStyle = "#f04838";
+          ctx.fillText("▶", ix - 22, iy);
+        }
+      });
+      return;
+    }
+
+    if (battle.menuMode === "PARTY") {
+      player.party.forEach((m, i) => {
+        const py = 382 + i * 26;
+        ctx.fillStyle = i === player.activeIdx ? "#288838" : "#182028";
+        ctx.font = `bold 17px ${FONT_FAMILY}`;
+        ctx.fillText(`#${String(m.id).padStart(4, "0")} ${m.name}  Lv.${m.level}  (HP ${m.hp}/${m.maxHp})`, 52, py);
+        if (battle.cursor === i) { ctx.fillStyle = "#f04838"; ctx.fillText("▶", 24, py); }
+      });
+    }
+  }
+
+  function renderPokedex() {
+    ctx.fillStyle = "#991b1b";
+    ctx.fillRect(0, 0, 720, 480);
+
+    const seenCount = Object.keys(dexProgress.seen).length;
+    const caughtCount = Object.keys(dexProgress.caught).length;
+    const curMount = player.mountMon || player.party[player.activeIdx];
+
+    // 頂部標題列
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `bold 16px ${FONT_FAMILY}`;
+    ctx.fillText(`全國圖鑑  遇見:${seenCount}  收服:${caughtCount}/1025`, 18, 26);
+
+    ctx.fillStyle = "#fde047";
+    ctx.font = `bold 13px ${FONT_FAMILY}`;
+    ctx.fillText(`目前坐騎: ${curMount ? curMount.name : "無"}`, 480, 26);
+
+    // 主白色圖鑑網格底板 (寬 696, 高 404)
+    ctx.fillStyle = "#f1f5f9";
+    ctx.fillRect(12, 36, 696, 404);
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(12, 36, 696, 404);
+
+    const visible = dexEntries.slice(dexScrollOffset, dexScrollOffset + 15);
+    if (visible.length === 0) {
+      ctx.fillStyle = "#475569";
+      ctx.font = `bold 18px ${FONT_FAMILY}`;
+      ctx.fillText("尚無遭遇紀錄，快去草叢或海邊探索吧！", 175, 240);
+    } else {
+      const COLS_DEX = 5;
+      const cellW = 132;
+      const cellH = 128; // 上方 102px (80%) 為高清立繪區，下方 26px (20%) 為名稱區
+      const startX = 20;
+      const startY = 44;
+
+      visible.forEach((entry, idx) => {
+        const globalIdx = dexScrollOffset + idx;
+        const col = idx % COLS_DEX;
+        const row = Math.floor(idx / COLS_DEX);
+        const cx = startX + col * (cellW + 5);
+        const cy = startY + row * (cellH + 5);
+        const isSelected = (globalIdx === dexCursor);
+        const isCurrentMount = (curMount && curMount.id === entry.id);
+
+        // 卡片背景與選取框
+        ctx.fillStyle = isSelected ? "#fef9c3" : "#ffffff";
+        ctx.fillRect(cx, cy, cellW, cellH);
+        ctx.strokeStyle = isSelected ? "#ef4444" : (isCurrentMount ? "#0284c7" : "#cbd5e1");
+        ctx.lineWidth = isSelected ? 3 : 1.5;
+        ctx.strokeRect(cx, cy, cellW, cellH);
+
+        // 左上角緊湊編號 + 收服/色違微章
+        ctx.fillStyle = entry.caught ? "#dc2626" : "#64748b";
+        ctx.font = `bold 10px monospace`;
+        ctx.fillText(`#${String(entry.id).padStart(4, "0")}${entry.shiny ? "✨" : ""}`, cx + 5, cy + 12);
+
+        if (isCurrentMount) {
+          ctx.fillStyle = "#0284c7";
+          ctx.font = `bold 10px ${FONT_FAMILY}`;
+          ctx.fillText("騎乘中", cx + cellW - 36, cy + 12);
+        } else if (entry.caught) {
+          ctx.fillStyle = "#ef4444";
+          ctx.beginPath();
+          ctx.arc(cx + cellW - 10, cy + 9, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 80% 圖片主視覺區 (92x92 高畫質立繪置中)
+        const img = entry.imgUrl ? imageCache[entry.imgUrl] : null;
+        if (img && img.complete && img.naturalWidth > 0) {
+          ctx.drawImage(img, cx + (cellW - 92) / 2, cy + 11, 92, 92);
+        } else {
+          ctx.fillStyle = "#cbd5e1";
+          ctx.beginPath();
+          ctx.arc(cx + cellW / 2, cy + 56, 24, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 20% 底部緊湊名稱區 (高 25px)
+        ctx.fillStyle = isSelected ? "#1e293b" : "#334155";
+        ctx.fillRect(cx, cy + cellH - 24, cellW, 24);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `bold 12px ${FONT_FAMILY}`;
+        ctx.textAlign = "center";
+        ctx.fillText(entry.name.slice(0, 8), cx + cellW / 2, cy + cellH - 7);
+        ctx.textAlign = "left";
+      });
+    }
+
+    // 底部操作指南
+    ctx.fillStyle = "#fde047";
+    ctx.font = `bold 14px ${FONT_FAMILY}`;
+    ctx.fillText("方向鍵移動游標  ｜  按 Z 設為騎乘坐騎  ｜  按 Enter / X 返回地圖", 115, 464);
+  }
+
+  function loop() {
+    update();
+    if (gameState === "LOADING") renderLoading();
+    else if (gameState === "OVERWORLD") renderOverworld();
+    else if (gameState === "BATTLE") renderBattle();
+    else if (gameState === "POKEDEX") renderPokedex();
+    requestAnimationFrame(loop);
+  }
+
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

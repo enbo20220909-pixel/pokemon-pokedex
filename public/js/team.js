@@ -58,6 +58,10 @@ const TeamModule = (() => {
     if (!id) return notify("請先輸入訓練家代號！", "warn");
     currentTrainer = id;
     localStorage.setItem("trainer_id", id);
+    const gbaFrame = document.getElementById("gbaGameFrame");
+    if (gbaFrame && gbaFrame.contentWindow) {
+      gbaFrame.contentWindow.postMessage({ type: "SYNC_TRAINER", trainerId: id }, "*");
+    }
 
     try {
       const res = await fetch(`${API_BASE}/team/${encodeURIComponent(id)}`);

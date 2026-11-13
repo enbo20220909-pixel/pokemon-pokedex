@@ -1,3 +1,8 @@
 backend/*.db
 *.log
 __pycache__/
+
+backend.log
+frontend.log
+*.pyc
+.DS_Store
