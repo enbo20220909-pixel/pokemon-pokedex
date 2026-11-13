@@ -108,3 +108,6 @@ def api_battle_switch(battle_id: str, req: SwitchRequest):
         return battle_engine.switch_player_pokemon(battle_id, req.target_idx)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+import rpg_routes
+app.include_router(rpg_routes.router)

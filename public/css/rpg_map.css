@@ -1,0 +1,288 @@
+.rpg-launch-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+.rpg-launch-btn:hover { filter: brightness(1.08); }
+
+.pokopia-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.92);
+  z-index: 2500;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+}
+
+.pokopia-window {
+  background: #f8fafc;
+  color: #1e293b;
+  border: 4px solid #334155;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 1020px;
+  max-height: 95vh;
+  overflow-y: auto;
+  padding: 14px 18px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75);
+  font-family: "Courier New", Courier, monospace, -apple-system, sans-serif;
+}
+
+.pokopia-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid #cbd5e1;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pokopia-nav { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+.cozy-btn {
+  background: #e2e8f0;
+  color: #1e293b;
+  border: 2px solid #475569;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: inset -2px -2px 0px #94a3b8;
+}
+.cozy-btn:hover, .cozy-btn.active {
+  background: #16a34a;
+  color: #fff;
+  border-color: #14532d;
+  box-shadow: inset -2px -2px 0px #14532d;
+}
+
+/* GBA 16-bit 大型卷軸畫布容器 */
+.gba-screen-wrap {
+  position: relative;
+  width: 100%;
+  height: 540px;
+  border: 4px solid #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #78c850;
+}
+#pokopiaCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.gba-dialog-box {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  right: 16px;
+  background: #ffffff;
+  border: 4px solid #1e293b;
+  outline: 2px solid #94a3b8;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 20;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+.encounter-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  z-index: 40;
+  pointer-events: none;
+  animation: gbaFlash 0.65s steps(2) forwards;
+}
+@keyframes gbaFlash {
+  0%, 40%, 80% { opacity: 1; background: #0f172a; }
+  20%, 60% { opacity: 1; background: #ffffff; }
+  100% { opacity: 0; }
+}
+
+/* 可愛療癒系馬卡龍戰鬥捕捉畫面 */
+.gba-battle-screen {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 75% 25%, #fef9c3 0%, #bae6fd 35%, #dcfce7 72%, #bbf7d0 100%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 18px;
+  font-family: "Rounded Mplus 1c", "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+.gba-battle-field {
+  position: relative;
+  flex: 1;
+}
+.cute-cloud {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+}
+
+.gba-enemy-cluster {
+  position: absolute;
+  top: 14px;
+  right: 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.gba-player-cluster {
+  position: absolute;
+  bottom: 10px;
+  left: 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.gba-sprite-stage {
+  position: relative;
+  width: 148px;
+  height: 132px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.gba-oval-base {
+  position: absolute;
+  bottom: 4px;
+  width: 154px;
+  height: 40px;
+  background: radial-gradient(ellipse at center, #fef08a 0%, #86efac 65%, #4ade80 100%);
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 6px 14px rgba(22, 163, 74, 0.25);
+  z-index: 0;
+}
+.cute-mon-bounce {
+  animation: cuteHop 1.6s ease-in-out infinite;
+}
+@keyframes cuteHop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.03); }
+}
+
+.gba-status-card {
+  background: rgba(255, 253, 245, 0.96);
+  border: 3px solid #f59e0b;
+  border-radius: 20px;
+  padding: 10px 16px;
+  min-width: 230px;
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.18);
+  z-index: 2;
+}
+.gba-hp-track {
+  background: #fde68a;
+  height: 11px;
+  border-radius: 999px;
+  padding: 2px;
+  margin: 6px 0 4px;
+}
+.gba-hp-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #4ade80, #22c55e);
+  transition: width 0.35s ease;
+}
+.gba-exp-track {
+  background: #e0f2fe;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.gba-exp-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+  transition: width 0.35s ease;
+}
+
+.gba-command-panel {
+  background: rgba(255, 255, 255, 0.96);
+  border: 3px solid #fbbf24;
+  border-radius: 20px;
+  padding: 10px 14px;
+  display: grid;
+  grid-template-columns: 1.25fr 1.45fr 0.8fr;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.cute-action-btn {
+  background: #fef9c3;
+  color: #78350f;
+  border: 2px solid #facc15;
+  border-radius: 14px;
+  padding: 6px 10px;
+  font-weight: 800;
+  font-size: 11px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.cute-action-btn:hover {
+  transform: translateY(-2px);
+  background: #fde047;
+}
+.cute-ball-btn {
+  background: #ffe4e6;
+  color: #9f1239;
+  border: 2px solid #fda4af;
+  border-radius: 14px;
+  padding: 6px 8px;
+  font-weight: 800;
+  font-size: 11px;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.cute-ball-btn:hover {
+  transform: translateY(-2px);
+  background: #fecdd3;
+}
+.cute-ball-btn.master {
+  background: linear-gradient(135deg, #f3e8ff, #fae8ff);
+  color: #6b21a8;
+  border-color: #c084fc;
+}
+
+.pc-box-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 10px;
+  max-height: 460px;
+  overflow-y: auto;
+  padding: 4px;
+}
+.pc-mon-card {
+  background: #ffffff;
+  border: 2px solid #64748b;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.pc-mon-card.legendary {
+  border-color: #d97706;
+  background: #fffbeb;
+}

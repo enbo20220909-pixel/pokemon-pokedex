@@ -222,6 +222,7 @@ const BattleModule = (() => {
           pSprite.classList.add("anim-diagonal-player-atk");
         }
         setTimeout(() => {
+          if (window.VfxModule) VfxModule.playMoveEffect(ev.move_type, "enemy");
           if (ev.damage > 0 && eSprite) {
             eSprite.classList.remove("anim-hit-shake");
             void eSprite.offsetWidth;
@@ -241,6 +242,7 @@ const BattleModule = (() => {
           eSprite.classList.add("anim-diagonal-enemy-atk");
         }
         setTimeout(() => {
+          if (window.VfxModule) VfxModule.playMoveEffect(ev.move_type, "player");
           if (ev.damage > 0 && pSprite) {
             pSprite.classList.remove("anim-hit-shake");
             void pSprite.offsetWidth;
